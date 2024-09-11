@@ -1,4 +1,4 @@
-import requests, io, base64, time, logging, re, math, filetype, os, string, random, datetime, webbrowser
+import requests, base64, time, logging, re, math, filetype, string, random, datetime, webbrowser
 import urllib.parse as urlp
 from  typing import Optional, List, Any
 
@@ -12,8 +12,9 @@ class ThreadsPipe:
     __threads_post_publish_endpoint__ = ""
     __threads_rate_limit_endpoint__ = ""
     __threads_post_reply_endpoint__ = ""
-    __threads_acces_token_endpoint__ = "https://graph.threads.net/oauth/access_token"
-    __threads_acces_token_refresh_endpoint__ = "https://graph.threads.net/refresh_access_token"
+    __threads_profile_endpoint__ = ""
+    __threads_access_token_endpoint__ = "https://graph.threads.net/oauth/access_token"
+    __threads_access_token_refresh_endpoint__ = "https://graph.threads.net/refresh_access_token"
 
     __threads_post_length_limit__ = 500
     __threads_media_limit__ = 10
@@ -51,6 +52,10 @@ class ThreadsPipe:
         'manage_replies': 'threads_manage_replies', 
         'insights': 'threads_manage_insights'
     }
+    threads_post_insight_metrics = ['views', 'likes', 'replies', 'reposts', 'quotes']
+    threads_user_insight_metrics = ["views", "likes", "replies", "reposts", "quotes", "followers_count", "follower_demographics"]
+    threads_follower_demographic_breakdown_list = ['country', 'city', 'age', 'gender']
+    who_can_reply_list = ['everyone', 'accounts_you_follow', 'mentioned_only']
 
     def __init__(
             self, 
@@ -58,7 +63,7 @@ class ThreadsPipe:
             access_token: str, 
             disable_logging = False,
             wait_before_post_publish = True,
-            post_publish_wait_time = 30, # 30 seconds wait time before publishing a post
+            post_publish_wait_time = 35, # 30 seconds wait time before publishing a post
             wait_before_media_item_publish = True,
             media_item_publish_wait_time = 10, # 30 seconds wait time before publishing a post
             handle_hashtags = True,
@@ -85,6 +90,7 @@ class ThreadsPipe:
         self.__threads_post_publish_endpoint__ = f"https://graph.threads.net/v1.0/{user_id}/threads_publish?access_token={access_token}"
         self.__threads_rate_limit_endpoint__ = f"https://graph.threads.net/v1.0/{user_id}/threads_publishing_limit?access_token={access_token}"
         self.__threads_post_reply_endpoint__ = f"https://graph.threads.net/v1.0/me/threads?access_token={access_token}"
+        self.__threads_profile_endpoint__ = f"https://graph.threads.net/v1.0/me?access_token={access_token}"
 
         self.__handle_hashtags__ = handle_hashtags
 
@@ -107,10 +113,13 @@ class ThreadsPipe:
             self, 
             post: Optional[str] = "", 
             files: Optional[List] = [], 
+            file_captions: List[str | None] = [],
             tags: Optional[List] = [],
             reply_to_id: Optional[str] = None, 
+            who_can_reply: str | None = None,
             chained_post = True, 
-            persist_tags_multipost = False
+            persist_tags_multipost = False,
+            allowed_country_codes: str | List[str] = None,
         ):
 
         if len(files) == 0 and (post is None or post == ""):
@@ -118,7 +127,20 @@ class ThreadsPipe:
         
         tags = tags
 
+        # who_can_reply: everyone | accounts_you_follow | mentioned_only
+
         _post = post
+
+        if allowed_country_codes is not None:
+            is_eligible_for_geo_gating = self.is_eligible_for_geo_gating()
+            if 'error' in is_eligible_for_geo_gating:
+                return is_eligible_for_geo_gating
+            elif is_eligible_for_geo_gating['is_eligible_for_geo_gating'] == False:
+                return self.__tp_response_msg__(
+                    message="You are attempting to send a geo-gated content but you are not eligible for geo-gating",
+                    body=is_eligible_for_geo_gating,
+                    is_error=True
+                )
 
 
         if post != None and (self.__handle_hashtags__ or self.__auto_handle_hashtags__):
@@ -131,20 +153,35 @@ class ThreadsPipe:
 
         print("files", len(files))
 
+        _captions = [file_captions[x] if x < len(file_captions) else None for x in range(len(files))]
+
         files = self.__handle_media__(files)
+        if 'error' in files:
+            return files
         splitted_files = [files[self.__threads_media_limit__ * x: self.__threads_media_limit__ * (x + 1)] for x in range(math.ceil(len(files)/self.__threads_media_limit__))]
 
+        splitted_captions = [_captions[self.__threads_media_limit__ * x: self.__threads_media_limit__ * (x + 1)] for x in range(math.ceil(len(files)/self.__threads_media_limit__))]
 
         print("files:", files)
 
+        allowed_country_codes = allowed_country_codes if type(allowed_country_codes) is str else None if allowed_country_codes is None else ",".join(allowed_country_codes)
 
+
+        media_ids = []
         prev_post_chain_id = reply_to_id
         for s_post in splitted_post:
             prev_post_chain_id = self.__send_post__(
                 s_post, 
                 medias=[] if splitted_post.index(s_post) >= len(splitted_files) else splitted_files[splitted_post.index(s_post)],
-                reply_to_id=prev_post_chain_id
+                media_captions=[] if splitted_post.index(s_post) >= len(splitted_captions) else splitted_captions[splitted_post.index(s_post)],
+                reply_to_id=None if prev_post_chain_id is None else prev_post_chain_id['id'],
+                allowed_listed_country_codes=allowed_country_codes,
+                who_can_reply=who_can_reply
             )
+            if 'error' in prev_post_chain_id:
+                return prev_post_chain_id
+            else:
+                media_ids.append(prev_post_chain_id['id'])
         
         print("done sending posts", len(splitted_post))
         
@@ -153,19 +190,29 @@ class ThreadsPipe:
                 prev_post_chain_id = self.__send_post__(
                     None, 
                     medias=file,
-                    reply_to_id=prev_post_chain_id
+                    media_captions=[] if splitted_post.index(s_post) >= len(splitted_captions) else splitted_captions[splitted_post.index(s_post)],
+                    reply_to_id=None if prev_post_chain_id is None else prev_post_chain_id['id'],
+                    allowed_listed_country_codes=allowed_country_codes,
+                    who_can_reply=who_can_reply
                 )
+                if 'error' in prev_post_chain_id:
+                    return prev_post_chain_id
+                else:
+                    media_ids.append(prev_post_chain_id['id'])
 
         print("deleting files")
         self.__delete_uploaded_files__(files=files)
+        logging.info("All posts piped to Instagram Threads successfully!")
+        return self.__tp_response_msg__(
+            message='All posts piped to Instagram Threads successfully!',
+            is_error=False,
+            body={'media_ids': media_ids}
+        )
 
         
     def get_quota_usage(self, silent=True, for_reply=False):
         field = "&fields=reply_quota_usage,reply_config" if for_reply == True else "&fields=quota_usage,config"
         req_rate_limit = requests.get(self.__threads_rate_limit_endpoint__ + field)
-
-        if not silent:
-            req_rate_limit.raise_for_status()
             
         if 'data' in req_rate_limit.json():
             return req_rate_limit.json()
@@ -181,7 +228,7 @@ class ThreadsPipe:
 
     def get_access_token(self, app_id: str, app_secret: str, auth_code: str, redirect_uri: str):
         req_short_lived_access_token = requests.post(
-            self.__threads_acces_token_endpoint__,
+            self.__threads_access_token_endpoint__,
             json={
                 'client_id': app_id,
                 'client_secret': app_secret,
@@ -197,7 +244,7 @@ class ThreadsPipe:
 
         if req_short_lived_access_token.status_code > 201:
             return {
-                "msg": "Could not generate short lived token",
+                "message": "Could not generate short lived token",
                 "error": short_lived_token
             }
 
@@ -207,7 +254,7 @@ class ThreadsPipe:
 
         if req_long_lived_access_token.status_code > 201:
             return {
-                "msg": "Could not generate long lived token",
+                "message": "Could not generate long lived token",
                 "error": req_long_lived_access_token.json()
             }
 
@@ -219,15 +266,122 @@ class ThreadsPipe:
             }
         }
     
-    def refresh_tokens(self, access_token: str, env_path: str = None, env_variable: str = None):
-        refresh_token_url = self.__threads_acces_token_refresh_endpoint__ + f"?grant_type=th_refresh_token&access_token={access_token}"
+    def refresh_token(self, access_token: str, env_path: str = None, env_variable: str = None):
+        refresh_token_url = self.__threads_access_token_refresh_endpoint__ + f"?grant_type=th_refresh_token&access_token={access_token}"
         refresh_token = requests.get(refresh_token_url)
+        if refresh_token.status_code > 201:
+            return {
+                'message': "An error occured could not refresh access token",
+                'error': refresh_token.json()
+            }
         if env_path != None and env_variable != None:
             set_key(env_path, env_variable, refresh_token['access_token'])
         return refresh_token.json()
+    
+    def is_eligible_for_geo_gating(self):
+        url = self.__threads_profile_endpoint__ + "&fields=id,is_eligible_for_geo_gating"
+        send_request = requests.get(url)
+        if send_request.status_code != 200:
+            logging.error(f"Could not get geo gating eligibility from Threads, Error:: {send_request.json()}")
+            return self.__tp_response_msg__(
+                message="Could not get geogating eligibility from Threads",
+                body=send_request.json(),
+                is_error=True
+            )
+        return send_request.json()
+    
+    def get_allowlisted_country_codes(self, limit: str | int = None):
+        ret_limit = "" if limit == None else "&limit=" + str(limit)
+        url = self.__threads_post_reply_endpoint__ + f"&fields=id,allowlisted_country_codes{ret_limit}"
+        request_list = requests.get(url)
+        return request_list.json()
+
+    def get_posts(self, since_date: str | None = None, until_date: str | None = None, limit: str | int | None = None):
+        since = "" if since_date is None else f"&since={since_date}"
+        until = "" if until_date is None else f"&until={until_date}"
+        _limit = "" if limit is None else f"&limit={str(limit)}"
+        url = self.__threads_post_reply_endpoint__ + f"&fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,children,is_quote_post{since}{until}{_limit}"
+        req_posts = requests.get(url)
+        return req_posts.json()
+    
+    def get_post(self, post_id: str):
+        url = f"https://graph.threads.net/v1.0/{post_id}?fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,children,is_quote_post&access_token={self.__threads_access_token__}"
+        req_post = requests.get(url)
+        return req_post.json()
+    
+    def get_profile(self):
+        url = self.__threads_profile_endpoint__ + f"&fields=id,username,name,threads_profile_picture_url,threads_biography"
+        req_profile = requests.get(url)
+        return req_profile.json()
+
+    def get_post_replies(self, post_id: str, top_levels=True, reverse=False):
+        _reverse = "false" if reverse is False else "true"
+        reply_level_type = "replies" if top_levels is True else "conversation"
+        url = f"https://graph.threads.net/v1.0/{post_id}/{reply_level_type}?fields=id,text,timestamp,media_product_type,media_type,media_url,shortcode,thumbnail_url,children,has_replies,root_post,replied_to,is_reply,hide_status&reverse={_reverse}&access_token={self.__threads_access_token__}"
+        req_replies = requests.get(url)
+        return req_replies.json()
+    
+    def get_user_replies(self, since_date: str | None = None, until_date: str | None = None, limit: int | str = None):
+        since = "" if since_date is None else f"&since={since_date}"
+        until = "" if until_date is None else f"&until={until_date}"
+        _limit = "" if limit is None else f"&limit={str(limit)}"
+        url = f"https://graph.threads.net/v1.0/me/replies?fields=id,media_product_type,media_type,media_url,permalink,username,text,timestamp,shortcode,thumbnail_url,children,is_quote_post,has_replies,root_post,replied_to,is_reply,is_reply_owned_by_me,reply_audience&since={since}&until={until}&limit={_limit}&access_token={self.__threads_access_token__}"
+        req_replies = requests.get(url)
+        return req_replies.json()
+    
+    def hide_reply(self, reply_id: str, hide: bool):
+        _hide = "true" if hide is True else "false"
+        url = f"https://graph.threads.net/v1.0/{reply_id}/manage_reply"
+        req_hide_reply = requests.post(
+            url,
+            data={
+                "access_token":self.__threads_access_token__,
+                "hide": _hide
+            }
+        )
+        return req_hide_reply.json()
+    
+    def get_post_insight(self, post_id: str, metrics: str | List[str] = 'all'):
+        _metric = ",".join(self.threads_post_insight_metrics) if metrics == 'all' else metrics
+        _metric = ','.join(_metric) if type(_metric) is list else _metric
+        _metric = "&metric=" + _metric
+        url = f"https://graph.threads.net/v1.0/{post_id}/insights?access_token={self.__threads_access_token__}{_metric}"
+        req_insight = requests.get(url)
+        return req_insight.json()
+    
+    def get_user_insight(self, user_id: str | None = None, since_date: str | None = None, until_date: str | None = None, follower_demographic_breakdown: str = 'country', metrics: str | List[str] = 'all'):
+        _metric = ",".join(self.threads_user_insight_metrics) if metrics == 'all' else metrics
+        _metric = ','.join(_metric) if type(_metric) is list else _metric
+        _metric = "&metric=" + _metric
+        _demographic_break_down = "&breakdown=" + follower_demographic_breakdown
+        since = "" if since_date is None else f"&since={since_date}"
+        until = "" if until_date is None else f"&until={until_date}"
+
+        _user_id = user_id if user_id is not None else "me"
+
+        url = f"https://graph.threads.net/v1.0/{_user_id}/threads_insights?access_token={self.__threads_access_token__}{_metric}{since}{until}{_demographic_break_down}"
+        req_insight = requests.get(url)
+        return req_insight.json()
+    
+    def get_post_intent(self, text: str = None, link: str = None):
+        _text = "" if text is None else self.__quote_str__(text)
+        _url = "" if link is None else "&url=" + urlp.quote(link,safe="")
+        return f"https://www.threads.net/intent/post?text={_text}{_url}"
+    
+    def get_follow_intent(self, username: str | None = None):
+        _username = username if username is not None else self.get_profile()['username']
+        return f"https://www.threads.net/intent/follow?username={_username}"
 
 
-    def __send_post__(self, post: str = None, medias: Optional[List] = [], reply_to_id: Optional[str] = None):
+    def __send_post__(
+            self, 
+            post: str = None, 
+            medias: Optional[List] = [], 
+            media_captions: List[str | None] = [],
+            reply_to_id: Optional[str] = None,
+            allowed_listed_country_codes: str | None = None,
+            who_can_reply: str | None = None
+        ):
         is_carousel = len(medias) > 1
         media_cont = medias
 
@@ -241,89 +395,170 @@ class ThreadsPipe:
                     time.sleep(quota_duration)
                 elif quota_usage > limit:
                     self.__delete_uploaded_files__(files=self.__handled_media__)
-                    raise Exception("Rate limit exceeded!")
+                    logging.error("Rate limit exceeded!")
+                    return self.__tp_response_msg__(
+                        message='Rate limit exceeded!', 
+                        body=quota,
+                        is_error=True
+                    )
+                
 
         MEDIA_CONTAINER_ID = ''
         post_text = f"&text={self.__quote_str__(post)}" if post is not None else ""
+        allowed_countries = f"&allowlisted_country_codes={allowed_listed_country_codes}" if allowed_listed_country_codes is not None else ""
+        reply_control = "" if who_can_reply is None else f"&reply_control={who_can_reply}"
 
         if is_carousel:
             MEDIA_CONTAINER_IDS_ARR = []
             for media in media_cont:
-                media_query = "image_url=" + media['url'] if media['type'] == 'IMAGE' else "video_url=" + media['url']
-                carousel_post_url = f"{self.__threads_media_post_endpoint__}&media_type={media['type']}&is_carousel_item=true&{media_query}"
-                req_post = requests.post(carousel_post_url)
+                media_query = "image_url=" + media['url'].replace('&', '%26') if media['type'] == 'IMAGE' else "video_url=" + media['url'].replace('&', '%26')
+                caption = None if media_cont.index(media) > len(media_captions) else media_captions[media_cont.index(media)]
+                caption = None if caption is None else {"alt_text": caption}
+                carousel_post_url = f"{self.__threads_media_post_endpoint__}&media_type={media['type']}&is_carousel_item=true&{media_query}{allowed_countries}"
+                req_post = requests.post(carousel_post_url, json=caption)
                 if req_post.status_code > 201:
                     self.__delete_uploaded_files__(files=self.__handled_media__)
-                    raise Exception(f"An error occured while creating an item container or uploading media file at index {media_cont.index(media)}, Error::", req_post.json())
-                # req_post.raise_for_status()
-                print("::::::::::uploaded media id", req_post.json())
+                    logging.error(f"An error occured while creating an item container or a uploading media file at index {media_cont.index(media)}, Error:: {req_post.json()}")
+                    return self.__tp_response_msg__(
+                        message=f"An error occured while creating an item container or a uploading media file at index {media_cont.index(media)}", 
+                        body=req_post.json(),
+                        is_error=True
+                    )
+
+                logging.info(f"Media/file at index {media_cont.index(media)} uploaded {req_post.json()}")
+
+                media_debug = self.__debug_post__(req_post.json()['id'])
+                f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {media_cont.index(media)} to be 'FINISHED'" if media_debug['status'] != "FINISHED" else ''
+                logging.info(f"Media upload debug for media/file at index {media_cont.index(media)}:: {media_debug}{f_info}")
+                while media_debug['status'] != "FINISHED":
+                    time.sleep(self.__post_publish_wait_time__)
+                    media_debug = self.__debug_post__(req_post.json()['id'])
+                    f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {media_cont.index(media)} to be 'FINISHED'" if media_debug['status'] != "FINISHED" else ''
+                    logging.info(f"Media upload debug for media/file at index {media_cont.index(media)}:: {media_debug}{f_info}")
+                    if media_debug['status'] == 'ERROR':
+                        self.__delete_uploaded_files__(files=self.__handled_media__)
+                        logging.error(f"Media item / file at index {media_cont.index(media)} could not be published, Error:: {media_debug}")
+                        return self.__tp_response_msg__(
+                            message=f"Media item / file at index {media_cont.index(media)} could not be published", 
+                            body=media_debug,
+                            is_error=True
+                        )
+
                 MEDIA_CONTAINER_IDS_ARR.append(req_post.json()['id'])
                 
             
             media_ids_str = ",".join(MEDIA_CONTAINER_IDS_ARR)
             endpoint = self.__threads_post_reply_endpoint__ if reply_to_id is not None else self.__threads_media_post_endpoint__
             reply_to_id = "" if reply_to_id is None else f"&reply_to_id={reply_to_id}"
-            carousel_cont_url = f"{endpoint}&media_type=CAROUSEL&children={media_ids_str}{post_text}{reply_to_id}"
-            print("sleeping before posting...")
-            # time.sleep(10)
-            if self.__wait_before_media_item_publish__:
-                time.sleep(self.__media_item_publish_wait_time__)
+            carousel_cont_url = f"{endpoint}&media_type=CAROUSEL&children={media_ids_str}{post_text}{reply_to_id}{allowed_countries}{reply_control}"
+
             req_create_carousel = requests.post(carousel_cont_url)
-            # print("req_create_carousel", req_create_carousel.json())
             if req_create_carousel.status_code > 201:
                 self.__delete_uploaded_files__(files=self.__handled_media__)
-                raise Exception("An error occured while creating media carousel, Error::", req_create_carousel.json())
+                logging.error(f"An error occured while creating media carousel, Error:: {req_create_carousel.json()}")
+                return self.__tp_response_msg__(
+                    message="An error occured while creating media carousel or a post with multiple files", 
+                    body=req_create_carousel.json(),
+                    is_error=True
+                )
             
-            # req_create_carousel.raise_for_status()
             MEDIA_CONTAINER_ID = req_create_carousel.json()['id']
             
         else:
             media_type = "TEXT" if len(medias) == 0 else media_cont[0]['type']
-            media = "" if len(medias) == 0 else media_cont[0]['url']
+            media = "" if len(medias) == 0 else media_cont[0]['url'].replace('&', '%26')
             media_url = "&image_url=" + media if media_type == "IMAGE" else "&video_url=" + media
             media_url = "" if len(medias) == 0 else media_url
+
             endpoint = self.__threads_post_reply_endpoint__ if reply_to_id is not None else self.__threads_media_post_endpoint__
             reply_to_id = "" if reply_to_id is None else f"&reply_to_id={reply_to_id}"
-            make_post_url = f"{endpoint}&media_type={media_type}{media_url}{post_text}{reply_to_id}"
-            request_endpoint = requests.post(make_post_url)
+            # caption = "" if len(media_captions) == 0 else media_captions[0]
+            # caption = "" if caption is None else "&alt_text=" + caption
+            caption = None if len(media_captions) == 0 else media_captions[0]
+            caption = None if caption is None else {"alt_text": caption}
+            make_post_url = f"{endpoint}&media_type={media_type}{media_url}{post_text}{reply_to_id}{allowed_countries}{reply_control}"
+            request_endpoint = requests.post(make_post_url, json=caption)
+            
             if request_endpoint.status_code > 201:
                 self.__delete_uploaded_files__(files=self.__handled_media__)
-                raise Exception("An error occured while creating media, Error::", request_endpoint.json())
+                logging.error(f"An error occured while creating media, Error:: {request_endpoint.json()}")
+                return self.__tp_response_msg__(
+                    message="An error occured while creating media / single post blueprint", 
+                    body=request_endpoint.json(),
+                    is_error=True
+                )
 
-            # request_endpoint.raise_for_status()
+            print("request_endpoint.json()", request_endpoint.status_code, request_endpoint.json())
             MEDIA_CONTAINER_ID = request_endpoint.json()['id']
 
+        delete_gh_files = True
         try:
-            if self.__wait_before_post_publish__:
+            post_debug = self.__debug_post__(MEDIA_CONTAINER_ID)
+            d_info = '\n::Note:: waiting for the post\'s ready status to be \'FINISHED\'' if post_debug['status'] != 'FINISHED' else ''
+            logging.info(f"Post publish-ready status:: {post_debug}{d_info}")
+
+            while post_debug['status'] != 'FINISHED':
                 time.sleep(self.__post_publish_wait_time__)
-            publish_post_url = f"{self.__threads_post_publish_endpoint__}&creation_id={MEDIA_CONTAINER_ID}"
+                post_debug = self.__debug_post__(MEDIA_CONTAINER_ID)
+                d_info = '\n::Note:: waiting for the post\'s ready status to be \'FINISHED\'' if post_debug['status'] != 'FINISHED' else ''
+                logging.info(f"Post publish-ready status:: {post_debug}{post_debug}{d_info}")
+                if post_debug['status'] == 'ERROR':
+                    logging.error(f"Uploaded media could not be published, Error:: {post_debug}")
+                    return self.__tp_response_msg__(
+                        message="Uploaded media could not be published", 
+                        body=post_debug,
+                        is_error=True
+                    )
+
+            publish_post_url = f"{self.__threads_post_publish_endpoint__}&creation_id={MEDIA_CONTAINER_ID}{allowed_countries}"
             publish_post = requests.post(publish_post_url)
             if publish_post.status_code > 201:
                 self.__delete_uploaded_files__(files=self.__handled_media__)
-                raise Exception(f"Could not publish post, Error::", publish_post.json())
+                delete_gh_files = False
+                logging.error(f"Could not publish post, Error:: {publish_post.json()}")
+                return self.__tp_response_msg__(
+                    message=f"Could not publish post", 
+                    body=publish_post.json(),
+                    is_error=True
+                )
 
+            print("publish_post", publish_post.json())
             post_debug = self.__debug_post__(MEDIA_CONTAINER_ID)
-            print(":::post_debug", post_debug, publish_post.json())
             if post_debug['status'] != 'PUBLISHED':
                 self.__delete_uploaded_files__(files=self.__handled_media__)
-                raise Exception(f"Post not sent, Error message {post_debug['error_message']}")
-            return publish_post.json()['id']
+                delete_gh_files = False
+                logging.error(f"Post not sent, Error message {post_debug['error_message']}")
+                return self.__tp_response_msg__(
+                    message=f"Post not sent, Error message {post_debug['error_message']}", 
+                    body=post_debug,
+                    is_error=True
+                )
+            # return publish_post.json()['id']
+            return {'id': publish_post.json()['id']}
         
         except Exception as e:
             debug = {}
+            if delete_gh_files:
+                self.__delete_uploaded_files__(files=self.__handled_media__)  
+
             if len(medias) > 0:
                 debug = self.__debug_post__(MEDIA_CONTAINER_ID)
             
             logging.error(f"Could not send post")
             logging.error(f"Exception: {e}")
             if len(debug.keys()) > 0:
-                logging.error(f"Published Post Debug: {debug['error_message']}")
-            self.__delete_uploaded_files__(files=self.__handled_media__)            
+                logging.error(f"Published Post Debug: {debug}")
+
+            # sys.exit()  
+            return self.__tp_response_msg__(
+                message=f"An unknown error occured could not send post", 
+                body=debug | {'e': e},
+                is_error=True
+            )
     
     def __debug_post__(self, media_id: int):
         media_debug_endpoint = f"https://graph.threads.net/v1.0/{media_id}?fields=status,error_message&access_token={self.__threads_access_token__}"
         req_debug_response = requests.get(media_debug_endpoint)
-        req_debug_response.raise_for_status()
         return req_debug_response.json()
     
     def __split_post__(self, post: str, tags: List) -> List[str]:
@@ -355,7 +590,7 @@ class ThreadsPipe:
         extra_text = post[len(''.join(tagged_post)):]
 
         if has_more_text:
-            text_split_range = math.ceil(len(extra_text)/500)
+            text_split_range = math.ceil(len(extra_text)/self.__threads_post_length_limit__)
             start_strip = 0
             for i in range(text_split_range):
                 extra_strip = 3 if i == 0 and len(tagged_post) == 0 else 6
@@ -402,7 +637,6 @@ class ThreadsPipe:
             return False
     
     def __handle_media__(self, media_files: List[Any]):
-
         for file in media_files:
             url_file_reg = re.compile(r"^(https?:\/\/)?([a-zA-Z0-9]+\.)?[a-zA-Z0-9]+\.[a-zA-Z0-9]{2,}(\/.*)?$")
             if type(file) == str and url_file_reg.match(file):
@@ -416,37 +650,67 @@ class ThreadsPipe:
                     req_check_type = requests.head(file)
                     if req_check_type.status_code > 200:
                         self.__delete_uploaded_files__(files=self.__handled_media__)
-                        raise Exception(f"File at index {media_files.index(file)} could not be found so its type could not be determined")
+                        logging.error(f"File at index {media_files.index(file)} could not be found so its type could not be determined")
+                        return self.__tp_response_msg__(
+                            message=f"File at index {media_files.index(file)} could not be found so its type could not be determined", 
+                            body={},
+                            is_error=True
+                        )
                     media_type = req_check_type.headers['Content-Type']
 
                 print("media_type", media_type)
                 if media_type == None:
                     self.__delete_uploaded_files__(files=self.__handled_media__)
-                    raise Exception(f"Filetype of the file at index {media_files.index(file)} is invalid")
+                    logging.error(f"Filetype of the file at index {media_files.index(file)} is invalid")
+                    return self.__tp_response_msg__(
+                        message=f"Filetype of the file at index {media_files.index(file)} is invalid", 
+                        body={},
+                        is_error=True
+                    )
 
                 media_type = media_type.split('/')[0].upper()
 
                 if media_type not in ['VIDEO', 'IMAGE']:
                     self.__delete_uploaded_files__(files=self.__handled_media__)
-                    raise Exception(f"Provided file at index {media_files.index(file)} must be either an image or video file, {media_type} given")
+                    logging.error(f"Provided file at index {media_files.index(file)} must be either an image or video file, {media_type} given")
+                    return self.__tp_response_msg__(
+                        message=f"Provided file at index {media_files.index(file)} must be either an image or video file, {media_type} given", 
+                        body={},
+                        is_error=True
+                    )
                 
                 self.__handled_media__.append({ 'type': media_type, 'url': file })
                 continue
             elif self.__is_base64__(file):
-                self.__handled_media__.append(self.__get_file_url__(base64.b64decode(file), media_files.index(file)))
+                _file = self.__get_file_url__(base64.b64decode(file), media_files.index(file))
+                if 'error' in _file:
+                    return _file
+                self.__handled_media__.append(_file)
             else:
-                self.__handled_media__.append(self.__get_file_url__(file, media_files.index(file)))
+                _file = self.__get_file_url__(file, media_files.index(file))
+                if 'error' in _file:
+                    return _file
+                self.__handled_media__.append(_file)
 
         return self.__handled_media__
     
     def __get_file_url__(self, file, file_index: int):
-        # print("__gh_bearer_token__", self.__gh_bearer_token__, "__gh_username__", self.__gh_username__, "__gh_repo_name__", self.__gh_repo_name__,)
         if self.__gh_bearer_token__ == None or self.__gh_username__ == None or self.__gh_repo_name__ == None:
-            raise Exception(f"To handle local file uploads to threads please provide your GitHub fine-grained access token, your GitHub username and the name of your GitHub repository to be used for the temporary file upload")
+            logging.error(f"To handle local file uploads to threads please provide your GitHub fine-grained access token, your GitHub username and the name of your GitHub repository to be used for the temporary file upload")
+            return self.__tp_response_msg__(
+                message=f"To handle local file uploads to threads please provide your GitHub fine-grained access token, your GitHub username and the name of your GitHub repository to be used for the temporary file upload", 
+                body={},
+                is_error=True
+            )
         
         if not filetype.is_image(file) and not filetype.is_video(file):
             self.__delete_uploaded_files__(files=self.__handled_media__)
-            raise Exception(f"Provided file at index {file_index} must be either an image or video file, {filetype.guess_mime(file)} given")
+            logging.error(f"Provided file at index {file_index} must be either an image or video file, {filetype.guess_mime(file)} given")
+            return self.__tp_response_msg__(
+                message=f"Provided file at index {file_index} must be either an image or video file, {filetype.guess_mime(file)} given", 
+                body={},
+                is_error=True
+            )
         
         f_type = "IMAGE" if filetype.is_image(file) else "VIDEO"
 
@@ -485,7 +749,12 @@ class ThreadsPipe:
 
         except Exception as e:
             self.__delete_uploaded_files__(files=self.__handled_media__)
-            raise Exception(f"An unknown error occured while trying to upload local file at index {file_index} to GitHub, error:", e)
+            logging.error(f"An unknown error occured while trying to upload local file at index {file_index} to GitHub, error: {e}")
+            return self.__tp_response_msg__(
+                message=f"An unknown error occured while trying to upload local file at index {file_index} to GitHub", 
+                body={'e': e},
+                is_error=True
+            )
 
         return file_obj
     
@@ -511,6 +780,10 @@ class ThreadsPipe:
                         logging.warning(f"File at index {files.index(file)} was not deleted from GitHub due to an unknown error, status_code::", req_upload_file.status_code)
             except Exception as e:
                 logging.error(f"The delete status of the file at index {files.index(file)} from the GitHub repository could not be determined, Error::", e)
-
+    
+    @staticmethod
+    def __tp_response_msg__(message: str, body: Any, is_error: bool = False):
+        return {'info': 'error', 'error': body | { 'message': message }} if is_error else {'info': 'success', 'data': body | { 'message': message }}
+    
 # t = ThreadsPipe()
 
