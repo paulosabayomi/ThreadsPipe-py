@@ -1,7 +1,11 @@
+"""
+    threadspipe uses the official Meta's Threads API to perform actions on a user's account
+    actions like create post, respond to posts and relies, get posts and users account insights and many more.
+"""
+
 import requests, base64, time, logging, re, math, filetype, string, random, datetime, webbrowser
 import urllib.parse as urlp
 from  typing import Optional, List, Any
-
 
 from dotenv import set_key
 
@@ -26,10 +30,10 @@ class ThreadsPipe:
     __threads_user_id__ = ''
 
     __wait_before_post_publish__ = True
-    __post_publish_wait_time__ = 30
+    __post_publish_wait_time__ = 35
 
     __wait_before_media_item_publish__ = True
-    __media_item_publish_wait_time__ = 10
+    __media_item_publish_wait_time__ = 35
 
     __handle_hashtags__ = True
     __auto_handle_hashtags__ = False
@@ -61,21 +65,114 @@ class ThreadsPipe:
             self, 
             user_id: int, 
             access_token: str, 
-            disable_logging = False,
-            wait_before_post_publish = True,
-            post_publish_wait_time = 35, # 30 seconds wait time before publishing a post
-            wait_before_media_item_publish = True,
-            media_item_publish_wait_time = 10, # 30 seconds wait time before publishing a post
-            handle_hashtags = True,
-            auto_handle_hashtags = False,
-            gh_bearer_token = None,
-            gh_api_version = "2022-11-28",
-            gh_repo_name = None,
-            gh_username = None,
-            gh_upload_timeout = 60 * 5,
-            wait_on_rate_limit = False,
-            check_rate_limit_before_post = True
+            disable_logging: bool = False,
+            wait_before_post_publish: bool = True,
+            post_publish_wait_time: int = 35, # 35 seconds wait time before publishing a post
+            wait_before_media_item_publish: bool = True,
+            media_item_publish_wait_time: int = 35, # 30 seconds wait time before publishing a post
+            handle_hashtags: bool = True,
+            auto_handle_hashtags: bool = False,
+            gh_bearer_token: str = None,
+            gh_api_version: str = "2022-11-28",
+            gh_repo_name: str = None,
+            gh_username: str = None,
+            gh_upload_timeout: int = 60 * 5,
+            wait_on_rate_limit: bool = False,
+            check_rate_limit_before_post: bool = True
         ) -> None:
+
+        """
+            # ThreadsPipe
+            ## Parameters
+            ### Example   
+            ```py
+                import threadspipe
+                #...
+
+                api = threadspipe.ThreadsPipe(
+                    access_token="threads-access-token", 
+                    user_id="threads-user-id", 
+                    handle_hashtags=True, 
+                    auto_handle_hashtags=False, 
+                    gh_bearer_token = "your-github-fined-grained-token",
+                    gh_repo_name = 'the-repository-name',
+                    gh_username = 'your-github-username',
+                )
+            ```
+
+            user_id: `int`  \
+            The user_id of the Threads account user_id, which is part of the data returned when you call the `get_access_token` method
+
+            access_token: `str` The user's account access token, \
+            either the short or long lived access token can be used, but the long lived access token is recommended, \
+            the short and long lived access token are part of the data returned when you call the `get_access_token` method
+
+            disable_logging - `bool | False` \
+            By default ThreadsPipe displays logs using the python's `logging` module, if you want to disable logging set this to `False`
+
+            wait_before_post_publish: `bool | True` \
+            It is recommended to wait for the status of media items (or uploaded files) or media containers (post blueprints) \
+            to be 'FINISHED' before publishing a Threads media container, the average wait time is 30 seconds \
+            and trying to publish a media item/file, and media container / post before it has finished processing could cause the publishing of the media container/post to fail, \
+            it is recommended to leave this parameter to `True`.
+
+            post_publish_wait_time: `int | 35` \
+            The time to wait for a media container or post in seconds to finish processing before publishing it, \
+            **Note:** it must not be less than 30 seconds and it is recommended not to be less than 31 seconds.
+
+            wait_before_media_item_publish: `bool | True` \
+            Media item (AKA uploaded files), just like media containers/posts, it is also recommended to wait for media items or uploaded files \
+            to finish processing before publishing the media container or post it is attached to.
+
+            media_item_publish_wait_time: `int | 35` \
+            The time to wait for a media item/uploaded files to finish processing, different media item types \
+            have different processing time and image files with small file sizes are always processed quickly than ones with larger \
+            file sizes and video files.
+
+            handle_hashtags: `bool | True` \
+            ThreadsPipe automatically handle hastags that are added to the end of a post, because only \
+            one hashtag is allowed in a threads post, so the tags are extracted and splitted and added to each of the chained posts, \
+            To not automatically handle hashtags set this to `False` \
+            if the text in the post is longer than the maximum character allowed by threads for a post or the provided files \
+            are more than the maximum allowed the post will be splitted and chained to the root post \
+            which is going to be like a thread post on X. The body of the post might already have an hashtag \
+            to make it more dynamic set the `auto_handle_hashtags` to `True`, when `auto_handle_hashtags` is `True` \
+            the post body that already has an hashtag will be skipped and no hashtag will be added to it.
+
+            auto_handle_hashtags: `bool | False` \
+            When this is `True` it will more intelligently (that what the `handle_hashtags` option does) and automatically handle hashtags, \
+            in cases where there are many hashtags at the end of a posts, the hashtags will be extracted and distributed intelligently \
+            between the chained posts, posts that already have an hashtag within the body of the post will not be given an hashtag.
+
+            gh_bearer_token: `str | None` \
+            Your GitHub fine-grained token, which can be gotten from [https://github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta), \
+            Because to upload files to the Threads API, only the url to the files are allowed and the files must be on a public server, \
+            and this is going to be challenging when uploading files available locally on your computer \
+            or local files on a server that are not exposed to the public, that's why ThreadsPipe will first of all upload the \
+            local files in the provided files to GitHub and then delete them after the files are uploaded to Threads or \
+            if an error occured while trying to publish the post.
+            
+            gh_api_version: `str | '2022-11-28'` \
+            The GitHub API version
+
+            gh_repo_name: `str | None` \
+            The name of the repository that should be used for the temporary storage of the local files.
+
+            gh_username: `str | None` \
+            Your GitHub username
+
+            gh_upload_timeout: `int` \
+            The upload timeout of the local files to GitHub, the default is `60 * 5` (5 minutes), \
+            but you can either reduce it or increase it.
+
+            wait_on_rate_limit: `bool | False` \
+            Whether ThreadsPipe should wait when rate limit is hit instead of rejecting the request, this can have an impact on the memory on your server \
+            in scenarios where multiple requests are made and will spawn multiple waiting processes.
+            
+            check_rate_limit_before_post: `bool | True` \
+            By default ThreadsPipe checks rate limit everytime before proceeding to post, \
+            if you don't want it to perform the check you can set it to `False`
+        """
 
         self.__threads_access_token__ = access_token
         self.__threads_user_id__ = user_id
@@ -122,12 +219,116 @@ class ThreadsPipe:
             allowed_country_codes: str | List[str] = None,
         ):
 
+        """
+            ## ThreadsPipe.pipe
+
+            ### Description   
+            The pipe method is for sending posts and replies to Threads
+
+            ### Example
+
+            ```py
+                pipe = api.pipe(
+                            post="A very long text...",
+                            files=[
+                                "/path/to/img-2.jpg",
+                                "https://example.com/video-1482062364825.mp4",
+                                open('/path/to/img-1.jpg', 'rb').read(),
+                                "https://example.com/photo-1504639725590.jpg",
+                                open('sample-5.mp4', 'rb').read(),
+                                "https://example.com/photo-1721332149371.jpg"
+                                "https://example.com/?w=800&p=Mnx8fGVufD%3D%3D",
+                                "https://example.com/photo-1725647093138.png",
+                                "https://example.com/?q=80&w=2574&z=jhsdbcjh",
+                                "https://example.com/?q=80&w=2574&z=awdas",
+                                "https://example.com/photo-1725628736546.mp4",
+                                "https://example.com/?w=800&p=nx8fGVA%3D%3D",
+                                "https://example.com/photo-1725792630033.jpeg",
+                                "https://example.com/?q=80&w=2574&z=wqfwefe",
+                                "https://example.com/photo-1725462567088.png"
+                                #...
+                            ],
+                            allowed_country_codes=["US", "CA", "NG", "SG"]
+                            file_captions=[
+                                'image of a macbook on a white table', 
+                                "image 1 from example website", 
+                                "coding picture taken upclose", None, 
+                                "video of watering a garden flower", 
+                                None, None, None, None, 
+                                "Image second from example website", None, None, 
+                                "Another third image from example website", None, 
+                                "Image 4 from example website", 
+                                None, 
+                                "Image 5 from example website", None],
+                            who_can_reply="accounts_you_follow"
+                        )
+            ```
+
+            ### Parameters
+
+            post: `str | ""` \
+            This parameter takes a string which is the text content of the post, \
+            it can be of any length and can be more than 500 which is the current \
+            character limit allowed in a post, ThreadsPipe will split the text \
+            into different batches of 500 characters, if the provided text is more than 500 \
+            and upload the first batch as the root post and \
+            then upload the rest of the batches as a reply to the root post, then the resulting post is going \
+            to be like an X thread post.
+
+            files: `List | []` \
+            The media files that will be attached to the post, the allowed file types \
+            can be `bytes`, url to a file, and `base64`, you can also pass in the path to a local file, \
+            the number of files can be any length and more than 10, if the number of files \
+            is more than 10 which is the limit for a post, ThreadsPipe would split them into batches of 10 files \
+            and send the first batch with the first text batch and the rest of the batch either as replies to the \
+            root post (if the text content of the post is less than 500) or with the text batch reply(ies) to the \
+            root post.
+
+            file_captions: `List[str | None] | []` \
+            The captions for the media files, provide the captions based on the index of the provided files and provide `None` \
+            at the index of the files that does not have caption, the length of the provided caption does not have to match the number of files provided, \
+            for example if 5 files were provided, to provided captions for files at index 1 and 4 \
+            it would be `[None, "Caption for file at index 1", None, None, "Caption for file at index 4"]`.
+
+            tags: `List[str] | []` \
+            If you would like to provide the hashtags instead of adding them to the end of the text content, \
+            you can provide them with this property instead, they can be any length, this will have no effect if \
+            both `handle_hashtags` and `auto_handle_hashtags` are `False`, Learn more about the `handle_hashtags` and `auto_handle_hashtags` \
+            to understand them better.
+
+            reply_to_id: `str | None` \
+            To reply to a post pass in the media id of the target post that you want to reply to, \
+            replying to a post also behaves like normal post and the text content and files will also be handled \
+            the same way.
+
+            who_can_reply: `str | None` \
+            Use this parameter to set who can reply to the post you're sending, use the \
+            `ThreadsPipe.who_can_reply_list` property to get a list of all available options, \
+            supported options are and one of `'everyone'`, `'accounts_you_follow'`, and `'mentioned_only'`
+            
+            chained_post: `bool | True` \
+            To turn off the automatic post chaining when the provided text content and/or the files are \
+            above the limit set this parameter to `False`.
+
+            persist_tags_multipost: `bool | False` \
+            Set this parameter to `True` if you want either the hashtags at the end of the provided text content \
+            or the provided hashtags to not be splitted and just be added as they are, this is useful only if you \
+            are using a single hashtag and you want the hashtag to be added to each of the chained posts.
+
+            allowed_country_codes: `List[str] | []` \
+            This requires the user to have the geo-gating permission, if you want to restrict the post to a country or a set of countries, provide the list of \
+            allowed country codes to this parameter, the format should be either a comma separated country codes \
+            i.e. "US,CA,NG" or a `List` of the allowed country codes i.e. ["US","CA","NG"], \
+            you can check if you have the permission to use the geo-gating feature by calling the `ThreadsPipe.is_eligible_for_geo_gating`
+
+            ### Returns
+            dict | requests.Response | Response
+        """
+
         if len(files) == 0 and (post is None or post == ""):
                 raise Exception("Either text or at least 1 media (image or video) or both must be provided")
         
         tags = tags
-
-        # who_can_reply: everyone | accounts_you_follow | mentioned_only
 
         _post = post
 
@@ -147,14 +348,15 @@ class ThreadsPipe:
             extract_tags_reg = re.compile(r"(?<=\s)(#[\w\d]+(?:\s#[\w\d]+)*)$")
             extract_tags = extract_tags_reg.findall(post)[0].split(' ')
             tags = tags if len(extract_tags) == 0 else extract_tags
+            tags = [" ".join(tags) for _ in range(len(tags))] if persist_tags_multipost is True else tags
             _post = _post if len(extract_tags) == 0 else extract_tags_reg.sub('', _post).strip()
 
         splitted_post = self.__split_post__(_post, tags)
-
-        print("files", len(files))
+        splitted_post = [splitted_post[0]] if chained_post == False else splitted_post
 
         _captions = [file_captions[x] if x < len(file_captions) else None for x in range(len(files))]
 
+        files = files[:self.__threads_media_limit__] if chained_post is False else files
         files = self.__handle_media__(files)
         if 'error' in files:
             return files
@@ -162,10 +364,7 @@ class ThreadsPipe:
 
         splitted_captions = [_captions[self.__threads_media_limit__ * x: self.__threads_media_limit__ * (x + 1)] for x in range(math.ceil(len(files)/self.__threads_media_limit__))]
 
-        print("files:", files)
-
         allowed_country_codes = allowed_country_codes if type(allowed_country_codes) is str else None if allowed_country_codes is None else ",".join(allowed_country_codes)
-
 
         media_ids = []
         prev_post_chain_id = reply_to_id
@@ -183,8 +382,6 @@ class ThreadsPipe:
             else:
                 media_ids.append(prev_post_chain_id['id'])
         
-        print("done sending posts", len(splitted_post))
-        
         if len(splitted_files) > len(splitted_post):
             for file in splitted_files[len(splitted_post):]:
                 prev_post_chain_id = self.__send_post__(
@@ -200,7 +397,6 @@ class ThreadsPipe:
                 else:
                     media_ids.append(prev_post_chain_id['id'])
 
-        print("deleting files")
         self.__delete_uploaded_files__(files=files)
         logging.info("All posts piped to Instagram Threads successfully!")
         return self.__tp_response_msg__(
@@ -210,7 +406,23 @@ class ThreadsPipe:
         )
 
         
-    def get_quota_usage(self, silent=True, for_reply=False):
+    def get_quota_usage(self, for_reply=False):
+        """
+            ## ThreadsPipe.get_quota_usage
+
+            ### Description   
+            The method to get user's quota usage
+
+            ### Parameters
+
+            for_reply: `bool | False` \
+            Set this parameter to `True` to get the media reply / post reply quota usage, \
+            default is `False` which returns the quota usage for posts.
+
+            ### Returns
+            requests.Response | Response | None
+        """
+        
         field = "&fields=reply_quota_usage,reply_config" if for_reply == True else "&fields=quota_usage,config"
         req_rate_limit = requests.get(self.__threads_rate_limit_endpoint__ + field)
             
@@ -220,6 +432,42 @@ class ThreadsPipe:
             return None
         
     def get_auth_token(self, app_id: str, redirect_uri: str, scope: str | List[str] = 'all', state: str | None = None):
+        """
+            ## ThreadsPipe.get_auth_token
+
+            ### Description
+            Use this method to implement the Authorization Window, The Authorization Window \
+            allows your app to get authorization codes and permissions from app users. \
+            Authorization codes can be exchanged for Threads user access tokens, which must be included when \
+            fetching an app user's profile, retrieving Threads media, publishing posts, reading replies, managing \
+            replies, or viewing insights.
+
+            ### Parameters
+            app_id: `str` \
+            Your Threads app id which can be found on the `Use cases > Customize > Settings` page.
+
+            redirect_uri: `str` \
+            The uri that the Threads API will redirect the user to after granting or rejecting the permission \
+            request, you can provide one of the redirect uri that you listed in the Redirect Callback URLs input box, \
+            the user will be redirected to this url after the action with a `code` query parameter containing \
+            authentication token which can be used to get short and long lived access tokens. \
+            The resulting url after redirection will look like `https://example.com/api.php?code=dnsdbcbdkvv...#_` \
+            and notice the `#_` at the end of the token which is not part of the token and should be \
+            stripped off, **Note:** The authentication token can only be used once, see `get_access_token` method to learn more.
+
+            scope: `str | List[str]` \
+            The scope is the Threads permissions that are enabled for the app, you can leave the value of this parameter as `all` \
+            or provide the list of comma separated string or `List` of the enabled permissions, the values should be \
+            from one of ThreadsPipe library threads-auth-scopes, which you can get by calling `ThreadsPipe.__threads_auth_scope__`, \
+            the returned dict's keys will be `basic`, `publish`, `read_replies`, `manage_replies`, `insights`.
+
+            state: `str` \
+            The state is a code to be set to prevent CORF e.g. '1', this is *optional*
+
+            ### Returns
+            None
+        """
+        
         scope = [x for x in self.__threads_auth_scope__.values()] if type(scope) == str and scope == 'all' else [self.__threads_auth_scope__[x] for x in scope]
         scope = ','.join(scope)
         state = f"&state={state}" if state is not None else ""
@@ -227,6 +475,33 @@ class ThreadsPipe:
         webbrowser.open(url)
 
     def get_access_token(self, app_id: str, app_secret: str, auth_code: str, redirect_uri: str):
+        """
+            ## ThreadsPipe.get_access_token
+
+            ### Description
+            This method swaps the access token gotten from Authorization Window for short and long lived access token.
+
+            ### Parameters
+
+            app_id: `str` \
+            The same app id you used when getting the authentication code from the Authentication Window.
+
+            app_secret: `str` \
+            This can be gotten from the `Use cases > Customize > Settings` page in the Threads App secret input box, \
+            in the app dashboard.
+
+            auth_code: `str` \
+            The authentication code that was gotten from the redirect url of the Authorization Window, \
+            Note this code can only be used once.
+
+            redirect_uri: `str` \
+            This redirect uri should be the same as the value of the `redirect_uri` argument passed to the `get_auth_token` \
+            method or the request will be rejected and the authorization token will be expired.
+
+            ### Returns
+            dict | JSON
+        """
+        
         req_short_lived_access_token = requests.post(
             self.__threads_access_token_endpoint__,
             json={
@@ -239,8 +514,6 @@ class ThreadsPipe:
         )
 
         short_lived_token = req_short_lived_access_token.json()
-
-        print('short_lived_token', req_short_lived_access_token.status_code, short_lived_token)
 
         if req_short_lived_access_token.status_code > 201:
             return {
@@ -267,6 +540,30 @@ class ThreadsPipe:
         }
     
     def refresh_token(self, access_token: str, env_path: str = None, env_variable: str = None):
+        """
+            ## ThreadsPipe.refresh_token
+
+            ### Description
+            Use this method to refresh unexpired long lived access tokens before they expire, long \
+            lived access tokens expire after 60 days, and you can only refresh long lived token and \
+            anytime after it is at least 24 hours old.
+
+            ### Parameters
+            access_token: `str` \
+            The long lived access token that will be refreshed for a new and life-extended one.
+
+            env_path: `str | None` \
+            This is optional, and it is useful and only required if you want ThreadsPipe to automatically update a variable \
+            with the new long lived token access token.
+
+            env_variable: `str | None` \
+            The name of the variable that ThreadsPipe should automatically update with the newly \
+            generated long lived access token.
+
+            ### Returns
+            JSON
+        """
+        
         refresh_token_url = self.__threads_access_token_refresh_endpoint__ + f"?grant_type=th_refresh_token&access_token={access_token}"
         refresh_token = requests.get(refresh_token_url)
         if refresh_token.status_code > 201:
@@ -279,6 +576,19 @@ class ThreadsPipe:
         return refresh_token.json()
     
     def is_eligible_for_geo_gating(self):
+        """
+            ## ThreadsPipe.is_eligible_for_geo_gating
+
+            ### Description
+            Use this method to check for an account's eligibility for posting geo-gated contents
+
+            ### Parameters
+            None
+
+            ### Returns
+            JSON
+        """
+        
         url = self.__threads_profile_endpoint__ + "&fields=id,is_eligible_for_geo_gating"
         send_request = requests.get(url)
         if send_request.status_code != 200:
@@ -291,12 +601,46 @@ class ThreadsPipe:
         return send_request.json()
     
     def get_allowlisted_country_codes(self, limit: str | int = None):
+        """
+            ## ThreadsPipe.get_allowlisted_country_codes
+
+            ### Description
+            Use this method to get a list of the country code values that can be used to limit geo-gating contents
+
+            ### Parameters
+            limit: `str | int | None` \
+            Use this parameter to limit the amount of data returned.
+
+            ### Returns
+            JSON
+        """
+        
         ret_limit = "" if limit == None else "&limit=" + str(limit)
         url = self.__threads_post_reply_endpoint__ + f"&fields=id,allowlisted_country_codes{ret_limit}"
         request_list = requests.get(url)
         return request_list.json()
 
     def get_posts(self, since_date: str | None = None, until_date: str | None = None, limit: str | int | None = None):
+        """
+            ## ThreadsPipe.get_posts
+
+            ### Description
+            This method returns all the posts an account has posted including the repllies
+
+            ### Parameters
+            since_date: `str | None` \
+            Set the start of the date that the posts should be returned from
+
+            until_date: `str | None` \
+            Set the end of the date of the posts that will be returned
+
+            limit: `str | int | None` \
+            The limit of the posts that should be returned
+
+            ### Returns
+            JSON
+        """
+        
         since = "" if since_date is None else f"&since={since_date}"
         until = "" if until_date is None else f"&until={until_date}"
         _limit = "" if limit is None else f"&limit={str(limit)}"
@@ -305,16 +649,65 @@ class ThreadsPipe:
         return req_posts.json()
     
     def get_post(self, post_id: str):
+        """
+            ## ThreadsPipe.get_post
+
+            ### Description
+            This method returns the data of a single post
+
+            ### Parameter
+            post_id: `str` \
+            The id of the post you want to get the data
+
+            ### Returns
+            JSON
+        """
+        
         url = f"https://graph.threads.net/v1.0/{post_id}?fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,children,is_quote_post&access_token={self.__threads_access_token__}"
         req_post = requests.get(url)
         return req_post.json()
     
     def get_profile(self):
+        """
+            ## ThreadsPipe.get_profile
+
+            ### Description
+            The method to get user profile
+
+            ### Parameters
+            None
+
+            ### Returns
+            JSON
+        """
+
+
         url = self.__threads_profile_endpoint__ + f"&fields=id,username,name,threads_profile_picture_url,threads_biography"
         req_profile = requests.get(url)
         return req_profile.json()
 
     def get_post_replies(self, post_id: str, top_levels=True, reverse=False):
+        """
+            ## ThreadsPipe.get_post_replies
+
+            ### Description
+            The method to get post replies
+
+            ### Parameters
+            post_id: `str` \
+            The of the post you want to get its replies
+
+            top_levels: `bool | True` \
+            Set this parameter to `False` if you want to get the deep level or simply \
+            replies of replies of replies, by default the method get the top level replies.
+
+            reverse: `bool | False` \
+            Set this parameter to `True` if you want the returned data to be in reverse order
+
+            ### Returns
+            JSON
+        """
+        
         _reverse = "false" if reverse is False else "true"
         reply_level_type = "replies" if top_levels is True else "conversation"
         url = f"https://graph.threads.net/v1.0/{post_id}/{reply_level_type}?fields=id,text,timestamp,media_product_type,media_type,media_url,shortcode,thumbnail_url,children,has_replies,root_post,replied_to,is_reply,hide_status&reverse={_reverse}&access_token={self.__threads_access_token__}"
@@ -322,6 +715,26 @@ class ThreadsPipe:
         return req_replies.json()
     
     def get_user_replies(self, since_date: str | None = None, until_date: str | None = None, limit: int | str = None):
+        """
+            ## ThreadsPipe.get_user_replies
+
+            ### Description
+            The method to get all user's replies
+
+            ### Parameter
+            since_date: `str | None` \
+            The start of the date to return the data from
+
+            until_date: `str | None` \
+            The end date of the replies that will be returned
+
+            limit: `int | str` \
+            The limit of the data that should be returned
+
+            ### Returns
+            JSON
+        """
+        
         since = "" if since_date is None else f"&since={since_date}"
         until = "" if until_date is None else f"&until={until_date}"
         _limit = "" if limit is None else f"&limit={str(limit)}"
@@ -330,6 +743,24 @@ class ThreadsPipe:
         return req_replies.json()
     
     def hide_reply(self, reply_id: str, hide: bool):
+        """
+            ## ThreadsPipe.hide_reply
+
+            ### Description
+            The method to hide a reply under a user's post
+
+            ### Parameters
+            reply_id: `str` \
+            The id of the reply that you want to hide
+            
+            hide: `bool` \
+            Can be `True` or `False`, set it to `True` if you want to hide the reply \
+            and `False` to unhide the reply
+
+            ### Returns
+            JSON
+        """
+        
         _hide = "true" if hide is True else "false"
         url = f"https://graph.threads.net/v1.0/{reply_id}/manage_reply"
         req_hide_reply = requests.post(
@@ -341,7 +772,27 @@ class ThreadsPipe:
         )
         return req_hide_reply.json()
     
-    def get_post_insight(self, post_id: str, metrics: str | List[str] = 'all'):
+    def get_post_insights(self, post_id: str, metrics: str | List[str] = 'all'):
+        """
+            ## ThreadsPipe.get_post_insights
+
+            ### Description
+            The method to get post insights, like number of like, view and so on
+
+            ### Parameters
+            post_id: `str` \
+            The id of the post you want to get insights for
+            
+            metrics: `str | List[str] | 'all'` \
+            The metrics to include in the data, leave the value of this parameter as 'all' to get data for all \
+            the available metrics or pass in a list of the metrics you want either as a comma separated string \
+            or as a `List`, you can get the list of metrics you can pass from the `ThreadsPipe.threads_post_insight_metrics` parameter \
+            which are `'views'`, `'likes'`, `'replies'`, `'reposts'`, `'quotes'`.
+
+            ### Returns
+            JSON
+        """
+        
         _metric = ",".join(self.threads_post_insight_metrics) if metrics == 'all' else metrics
         _metric = ','.join(_metric) if type(_metric) is list else _metric
         _metric = "&metric=" + _metric
@@ -349,7 +800,40 @@ class ThreadsPipe:
         req_insight = requests.get(url)
         return req_insight.json()
     
-    def get_user_insight(self, user_id: str | None = None, since_date: str | None = None, until_date: str | None = None, follower_demographic_breakdown: str = 'country', metrics: str | List[str] = 'all'):
+    def get_user_insights(self, user_id: str | None = None, since_date: str | None = None, until_date: str | None = None, follower_demographic_breakdown: str = 'country', metrics: str | List[str] = 'all'):
+        """
+            ## ThreadsPipe.get_user_insights
+
+            ### Description
+            The method to get user's account insights
+
+            ### Parameters
+            user_id: `str | None` \
+            The optional user id if you want to get the account insights for another user that's different from the currently connected one to ThreadsPipe.
+            
+            since_date: `str | None` \
+            The start date that the data should be returned from, **Note:** that User insights are not guaranteed to work before June 1, 2024, \
+            and the user insights since_date and until_date parameters do not work for dates before April 13, 2024
+            
+            until_date: `str | None` \
+            The end date of the insights data, **Note:** The user insights `since_date` and `until_date` parameters do not work for dates before April 13, 2024.
+            
+            follower_demographic_breakdown: `str | 'country'` \
+            The metrics contains the `'follower_demographics'` value which requires one follower demographic breakdown \
+            to be provided, you can get the list of all available values that you can pass to this parater \
+            from the `ThreadsPipe.threads_follower_demographic_breakdown_list` which will return \
+            `'country'`, `'city'`, `'age'`, and `'gender'` and only one of them should be provided.
+            
+            metrics: `str | List[str] | 'all'` \
+            The metrics that should be returned for the user account's insight, you can either leave the default value of \
+            this parameter as 'all' which will return all available metrics or provide a comma separated string of \
+            the metrics you want or as a `List`, you can get the available user insight metrics from the `ThreadsPipe.threads_user_insight_metrics` \
+            which will return `"views"`, `"likes"`, `"replies"`, `"reposts"`, `"quotes"`, `"followers_count"`, and `"follower_demographics"`.
+
+            ### Returns
+            JSON
+        """
+        
         _metric = ",".join(self.threads_user_insight_metrics) if metrics == 'all' else metrics
         _metric = ','.join(_metric) if type(_metric) is list else _metric
         _metric = "&metric=" + _metric
@@ -364,11 +848,42 @@ class ThreadsPipe:
         return req_insight.json()
     
     def get_post_intent(self, text: str = None, link: str = None):
+        """
+            ## ThreadsPipe.get_post_intent
+
+            ### Description
+            The method to get Threads' post intent
+
+            ### Parameters
+            text: `str | None` \
+            The text content of the post
+
+            ### link: `str | None` \
+            The link to your blog or website
+
+            ### Returns
+            str
+        """
+        
         _text = "" if text is None else self.__quote_str__(text)
         _url = "" if link is None else "&url=" + urlp.quote(link,safe="")
         return f"https://www.threads.net/intent/post?text={_text}{_url}"
     
     def get_follow_intent(self, username: str | None = None):
+        """
+            ## ThreadsPipe.get_follow_intent
+
+            ### Description
+            The method to get the follow intent link, this intents allow people to easily follow a Threads account directly from your website.
+
+            ### Parameters
+            username: `str | None` \
+            The username you want to get the follow intent for, leave this as `None` to automatically use the connected account.
+
+            ### Returns
+            str
+        """
+        
         _username = username if username is not None else self.get_profile()['username']
         return f"https://www.threads.net/intent/follow?username={_username}"
 
@@ -382,6 +897,14 @@ class ThreadsPipe:
             allowed_listed_country_codes: str | None = None,
             who_can_reply: str | None = None
         ):
+        """
+            ### ThreadsPipe.__send_post__
+
+            #### Description
+            This method handles sending posts and replies to Threads
+        """
+        
+        
         is_carousel = len(medias) > 1
         media_cont = medias
 
@@ -427,12 +950,12 @@ class ThreadsPipe:
 
                 logging.info(f"Media/file at index {media_cont.index(media)} uploaded {req_post.json()}")
 
-                media_debug = self.__debug_post__(req_post.json()['id'])
+                media_debug = self.__upload_post__(req_post.json()['id'])
                 f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {media_cont.index(media)} to be 'FINISHED'" if media_debug['status'] != "FINISHED" else ''
                 logging.info(f"Media upload debug for media/file at index {media_cont.index(media)}:: {media_debug}{f_info}")
                 while media_debug['status'] != "FINISHED":
-                    time.sleep(self.__post_publish_wait_time__)
-                    media_debug = self.__debug_post__(req_post.json()['id'])
+                    time.sleep(self.__media_item_publish_wait_time__)
+                    media_debug = self.__upload_post__(req_post.json()['id'])
                     f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {media_cont.index(media)} to be 'FINISHED'" if media_debug['status'] != "FINISHED" else ''
                     logging.info(f"Media upload debug for media/file at index {media_cont.index(media)}:: {media_debug}{f_info}")
                     if media_debug['status'] == 'ERROR':
@@ -472,8 +995,7 @@ class ThreadsPipe:
 
             endpoint = self.__threads_post_reply_endpoint__ if reply_to_id is not None else self.__threads_media_post_endpoint__
             reply_to_id = "" if reply_to_id is None else f"&reply_to_id={reply_to_id}"
-            # caption = "" if len(media_captions) == 0 else media_captions[0]
-            # caption = "" if caption is None else "&alt_text=" + caption
+            
             caption = None if len(media_captions) == 0 else media_captions[0]
             caption = None if caption is None else {"alt_text": caption}
             make_post_url = f"{endpoint}&media_type={media_type}{media_url}{post_text}{reply_to_id}{allowed_countries}{reply_control}"
@@ -488,18 +1010,17 @@ class ThreadsPipe:
                     is_error=True
                 )
 
-            print("request_endpoint.json()", request_endpoint.status_code, request_endpoint.json())
             MEDIA_CONTAINER_ID = request_endpoint.json()['id']
 
         delete_gh_files = True
         try:
-            post_debug = self.__debug_post__(MEDIA_CONTAINER_ID)
+            post_debug = self.__upload_post__(MEDIA_CONTAINER_ID)
             d_info = '\n::Note:: waiting for the post\'s ready status to be \'FINISHED\'' if post_debug['status'] != 'FINISHED' else ''
             logging.info(f"Post publish-ready status:: {post_debug}{d_info}")
 
             while post_debug['status'] != 'FINISHED':
                 time.sleep(self.__post_publish_wait_time__)
-                post_debug = self.__debug_post__(MEDIA_CONTAINER_ID)
+                post_debug = self.__upload_post__(MEDIA_CONTAINER_ID)
                 d_info = '\n::Note:: waiting for the post\'s ready status to be \'FINISHED\'' if post_debug['status'] != 'FINISHED' else ''
                 logging.info(f"Post publish-ready status:: {post_debug}{post_debug}{d_info}")
                 if post_debug['status'] == 'ERROR':
@@ -522,8 +1043,7 @@ class ThreadsPipe:
                     is_error=True
                 )
 
-            print("publish_post", publish_post.json())
-            post_debug = self.__debug_post__(MEDIA_CONTAINER_ID)
+            post_debug = self.__upload_post__(MEDIA_CONTAINER_ID)
             if post_debug['status'] != 'PUBLISHED':
                 self.__delete_uploaded_files__(files=self.__handled_media__)
                 delete_gh_files = False
@@ -533,7 +1053,7 @@ class ThreadsPipe:
                     body=post_debug,
                     is_error=True
                 )
-            # return publish_post.json()['id']
+
             return {'id': publish_post.json()['id']}
         
         except Exception as e:
@@ -542,21 +1062,28 @@ class ThreadsPipe:
                 self.__delete_uploaded_files__(files=self.__handled_media__)  
 
             if len(medias) > 0:
-                debug = self.__debug_post__(MEDIA_CONTAINER_ID)
+                debug = self.__upload_post__(MEDIA_CONTAINER_ID)
             
             logging.error(f"Could not send post")
             logging.error(f"Exception: {e}")
             if len(debug.keys()) > 0:
                 logging.error(f"Published Post Debug: {debug}")
 
-            # sys.exit()  
             return self.__tp_response_msg__(
                 message=f"An unknown error occured could not send post", 
                 body=debug | {'e': e},
                 is_error=True
             )
     
-    def __debug_post__(self, media_id: int):
+    def __upload_post__(self, media_id: int):
+        """
+            ### ThreadsPipe.__upload_post__
+
+            #### Description
+            The method to provide information on the status of post and media item/file upload
+        """
+        
+        
         media_debug_endpoint = f"https://graph.threads.net/v1.0/{media_id}?fields=status,error_message&access_token={self.__threads_access_token__}"
         req_debug_response = requests.get(media_debug_endpoint)
         return req_debug_response.json()
@@ -600,8 +1127,6 @@ class ThreadsPipe:
                 start_strip = (extra_strip + start_strip)
                 untagged_post.append(_post)
 
-        print("type", type(tagged_post + untagged_post))
-
         return tagged_post + untagged_post
         
 
@@ -616,7 +1141,7 @@ class ThreadsPipe:
     
     @staticmethod
     def __rand_str__(length):
-        characters = string.ascii_letters + string.digits  # You can add more characters if desired
+        characters = string.ascii_letters + string.digits
         random_string = ''.join(random.choice(characters) for _ in range(length))
         return random_string
     
@@ -658,7 +1183,6 @@ class ThreadsPipe:
                         )
                     media_type = req_check_type.headers['Content-Type']
 
-                print("media_type", media_type)
                 if media_type == None:
                     self.__delete_uploaded_files__(files=self.__handled_media__)
                     logging.error(f"Filetype of the file at index {media_files.index(file)} is invalid")
@@ -720,7 +1244,6 @@ class ThreadsPipe:
 
         try:
             _f_type = filetype.guess(file).mime
-            print("Uploading index", file_index, ", mime type", _f_type)
             file = open(file, 'rb').read() if type(file) == str else file
             
             filename = self.__rand_str__(10) + '.' + _f_type.split('/')[-1].lower()
@@ -744,8 +1267,6 @@ class ThreadsPipe:
             file_obj['url'] = response['content']['download_url']
             file_obj['sha'] = response['content']['sha']
             file_obj['_link'] = response['content']['_links']['self']
-
-            print("response", response['content']['download_url'], response['content']['sha'])
 
         except Exception as e:
             self.__delete_uploaded_files__(files=self.__handled_media__)
@@ -785,5 +1306,3 @@ class ThreadsPipe:
     def __tp_response_msg__(message: str, body: Any, is_error: bool = False):
         return {'info': 'error', 'error': body | { 'message': message }} if is_error else {'info': 'success', 'data': body | { 'message': message }}
     
-# t = ThreadsPipe()
-
