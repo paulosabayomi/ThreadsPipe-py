@@ -1,12 +1,12 @@
 """
-    threadspipe uses the official Meta's Threads API to perform actions on a user's account
-    actions like create post, respond to posts and relies, get posts and users account insights and many more.
+    threadspipe uses the official Meta's Threads API to perform actions on a user's account,
+    actions like create post, respond to posts and replies, get posts and users account insights and many more.
 """
 
 import requests, base64, time, logging, re, math, filetype, string, random, datetime, webbrowser
 import urllib.parse as urlp
-from  typing import Optional, List, Any
 
+from  typing import Optional, List, Any
 from dotenv import set_key
 
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
@@ -69,7 +69,7 @@ class ThreadsPipe:
             wait_before_post_publish: bool = True,
             post_publish_wait_time: int = 35, # 35 seconds wait time before publishing a post
             wait_before_media_item_publish: bool = True,
-            media_item_publish_wait_time: int = 35, # 30 seconds wait time before publishing a post
+            media_item_publish_wait_time: int = 35, # 35 seconds wait time before publishing a post
             handle_hashtags: bool = True,
             auto_handle_hashtags: bool = False,
             gh_bearer_token: str = None,
@@ -101,11 +101,11 @@ class ThreadsPipe:
             ```
 
             user_id: `int`  \
-            The user_id of the Threads account user_id, which is part of the data returned when you call the `get_access_token` method
+            The user_id of the Threads account, which is part of the data returned when you call the `get_access_tokens` method
 
             access_token: `str` The user's account access token, \
             either the short or long lived access token can be used, but the long lived access token is recommended, \
-            the short and long lived access token are part of the data returned when you call the `get_access_token` method
+            the short and long lived access token are part of the data returned when you call the `get_access_tokens` method
 
             disable_logging - `bool | False` \
             By default ThreadsPipe displays logs using the python's `logging` module, if you want to disable logging set this to `False`
@@ -205,6 +205,96 @@ class ThreadsPipe:
         if disable_logging:
             logging.disable()
 
+
+    def update_param(
+            self, 
+            user_id: int = None, 
+            access_token: str = None, 
+            disable_logging: bool = None,
+            wait_before_post_publish: bool = None,
+            post_publish_wait_time: int = None, # 35 seconds wait time before publishing a post
+            wait_before_media_item_publish: bool = None,
+            media_item_publish_wait_time: int = None, # 35 seconds wait time before publishing a post
+            handle_hashtags: bool = None,
+            auto_handle_hashtags: bool = None,
+            gh_bearer_token: str = None,
+            gh_api_version: str = None,
+            gh_repo_name: str = None,
+            gh_username: str = None,
+            gh_upload_timeout: int = None,
+            wait_on_rate_limit: bool = None,
+            check_rate_limit_before_post: bool = None
+        ) -> None:
+
+        """
+            ## ThreadsPipe.update_param
+
+            ### Description
+            To update the default class parameters, not it is not guarateed that the updated \
+            value of a parameter will be used if this method is called before performing an \
+            action on the parameter, so it is recommended to call this method to set the parameter \
+            before performing the action on the parameter that was set.
+
+            #### Example   
+            ```py
+                api.update_param(
+                    user_id=user_id,
+                    access_token=access_token,
+                    disable_logging=True
+                )
+            ```
+
+            ### Parameters
+            See the class object __init__ for more info on the parameters 
+        """
+
+        if access_token is not None:
+            self.__threads_access_token__ = access_token
+            self.__threads_post_reply_endpoint__ = f"https://graph.threads.net/v1.0/me/threads?access_token={access_token}"
+            self.__threads_profile_endpoint__ = f"https://graph.threads.net/v1.0/me?access_token={access_token}"
+            
+        if user_id is not None:
+            self.__threads_user_id__ = user_id
+
+        if wait_before_post_publish is not None:
+            self.__wait_before_post_publish__ = wait_before_post_publish
+        if post_publish_wait_time is not None:
+            self.__post_publish_wait_time__ = post_publish_wait_time
+
+        if wait_before_media_item_publish is not None:
+            self.__wait_before_media_item_publish__ = wait_before_media_item_publish
+        if media_item_publish_wait_time is not None:
+            self.__media_item_publish_wait_time__ = media_item_publish_wait_time
+
+        if user_id is not None and access_token is not None:
+            self.__threads_media_post_endpoint__ = f"https://graph.threads.net/v1.0/{user_id}/threads?access_token={access_token}"
+            self.__threads_post_publish_endpoint__ = f"https://graph.threads.net/v1.0/{user_id}/threads_publish?access_token={access_token}"
+            self.__threads_rate_limit_endpoint__ = f"https://graph.threads.net/v1.0/{user_id}/threads_publishing_limit?access_token={access_token}"
+        
+        if handle_hashtags is not None:
+            self.__handle_hashtags__ = handle_hashtags
+
+        if auto_handle_hashtags is not None:
+            self.__auto_handle_hashtags__ = auto_handle_hashtags
+
+        if gh_bearer_token is not None:
+            self.__gh_bearer_token__ = gh_bearer_token
+        if gh_api_version is not None:
+            self.__gh_api_version__ = gh_api_version
+        if gh_username is not None:
+            self.__gh_username__ = gh_username
+        if gh_repo_name is not None:
+            self.__gh_repo_name__ = gh_repo_name
+        if gh_upload_timeout is not None:
+            self.__gh_upload_timeout__ = gh_upload_timeout
+
+        if wait_on_rate_limit is not None:
+            self.__wait_on_rate_limit__ = wait_on_rate_limit
+        if check_rate_limit_before_post is not None:
+            self.__check_rate_limit_before_post__ = check_rate_limit_before_post
+
+        if disable_logging is not None and disable_logging is True:
+            logging.disable()
 
     def pipe(
             self, 
@@ -453,7 +543,7 @@ class ThreadsPipe:
             authentication token which can be used to get short and long lived access tokens. \
             The resulting url after redirection will look like `https://example.com/api.php?code=dnsdbcbdkvv...#_` \
             and notice the `#_` at the end of the token which is not part of the token and should be \
-            stripped off, **Note:** The authentication token can only be used once, see `get_access_token` method to learn more.
+            stripped off, **Note:** The authentication token can only be used once, see `get_access_tokens` method to learn more.
 
             scope: `str | List[str]` \
             The scope is the Threads permissions that are enabled for the app, you can leave the value of this parameter as `all` \
@@ -474,9 +564,9 @@ class ThreadsPipe:
         url = f'https://threads.net/oauth/authorize/?client_id={app_id}&redirect_uri={redirect_uri}&response_type=code&scope={scope}{state}'
         webbrowser.open(url)
 
-    def get_access_token(self, app_id: str, app_secret: str, auth_code: str, redirect_uri: str):
+    def get_access_tokens(self, app_id: str, app_secret: str, auth_code: str, redirect_uri: str):
         """
-            ## ThreadsPipe.get_access_token
+            ## ThreadsPipe.get_access_tokens
 
             ### Description
             This method swaps the access token gotten from Authorization Window for short and long lived access token.
