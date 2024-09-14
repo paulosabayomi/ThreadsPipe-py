@@ -715,7 +715,7 @@ class ThreadsPipe:
             ## ThreadsPipe.get_posts
 
             ### Description
-            This method returns all the posts an account has posted including the repllies
+            This method returns all the posts an account has posted including the replies
 
             ### Parameters
             since_date: `str | None` \
@@ -910,7 +910,7 @@ class ThreadsPipe:
             
             follower_demographic_breakdown: `str | 'country'` \
             The metrics contains the `'follower_demographics'` value which requires one follower demographic breakdown \
-            to be provided, you can get the list of all available values that you can pass to this parater \
+            to be provided, you can get the list of all available values that you can pass to this parameter \
             from the `ThreadsPipe.threads_follower_demographic_breakdown_list` which will return \
             `'country'`, `'city'`, `'age'`, and `'gender'` and only one of them should be provided.
             
