@@ -1,6 +1,6 @@
 # ThreadsPipe
 
-threadspipe-py threads Python library uses the official Meta's Threads API to perform actions on a user's account, actions like create post, respond to posts and replies, get posts and users account insights and many more.
+threadspipe-py Python library uses the official Meta's Threads API to perform actions on a user's account, actions like create post, respond to posts and replies, get posts and users account insights and many more.
 
 ## Instalation
 
@@ -802,6 +802,6 @@ action | `True` | *not applicable* | positional argument in which in this case i
   
 ## LICENSE
 
-MIT  
+[MIT License](https://github.com/paulosabayomi/ThreadsPipe-py/blob/main/LICENSE)  
   
 Created with :heart: by Abayomi Amusa
