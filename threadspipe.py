@@ -230,10 +230,10 @@ class ThreadsPipe:
             ## ThreadsPipe.update_param
 
             ### Description
-            To update the default class parameters, not it is not guarateed that the updated \
-            value of a parameter will be used if this method is called before performing an \
-            action on the parameter, so it is recommended to call this method to set the parameter \
-            before performing the action on the parameter that was set.
+            To update the default class parameters, it is not guaranteed that the updated \
+            value(s) of the parameter(s) will be used if this method is called before performing an \
+            action with the parameter(s) that was set with the method, so it is recommended to call this \
+            method to set the parameter(s) before performing the action(s) with the parameter(s) that was set.
 
             #### Example   
             ```py

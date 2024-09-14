@@ -1,17 +1,21 @@
 # ThreadsPipe
 
-threadspipe-py threads library uses the official Meta's Threads API to perform actions on a user's account, actions like create post, respond to posts and replies, get posts and users account insights and many more.
+threadspipe-py threads Python library uses the official Meta's Threads API to perform actions on a user's account, actions like create post, respond to posts and replies, get posts and users account insights and many more.
 
 ## Instalation
 
 ```bash
 pip install threadspipe-py
+# OR
+# pip3 install threadspipe-py
 ```
 
 If you want to add the dependencies required for the threadspipe CLI, install ThreadsPipe with
 
 ```bash
 pip install threadspipe-py[cli]
+# OR
+# pip3 install threadspipe-py[cli]
 ```
 
 This will install ThreadsPipe, the dependencies and the CLI dependencies
@@ -26,7 +30,7 @@ After creating an app with Threads use case and selecting the permissions you ne
 
 #### Authorization window - first step
 
-The next thing is to implement the Authorization window to get the authorization token which will be swapped for the short and long lived access tokens, after user has granted your app access they will be redirected to your redirect_uri page in which the authorization token will be in the `code` parameter added to the end of the redirect_uri, so for example if passed a redirect_uri like `https://example.com/handler.php` when the user gets redirected to the uri the resulting uri will be like `https://example.com/handler.php?code=Abcdef...#_` and notice the `#_` at the end of the token which needs to be stripped off.  
+The next thing is to implement the Authorization window to get the authorization token which will be swapped for the short and long lived access tokens, after the user has granted your app access they will be redirected to your redirect_uri page in which the authorization token will be in the `code` parameter added as a query string to the redirect_uri, so for example if passed a redirect_uri like `https://example.com/handler.php` when the user gets redirected to the uri the resulting uri will be like `https://example.com/handler.php?code=Abcdef...#_` and notice the `#_` at the end of the token which needs to be stripped off.  
 
 When you call the `api.get_auth_token` method below it will open the device's default browser and open up the authorization window/page which is something that will look like this  
 ![https://scontent-los2-1.xx.fbcdn.net/v/t39.8562-6/448400385_1192671258431902_561156009842405502_n.png?_nc_cat=103&ccb=1-7&_nc_sid=f537c7&_nc_eui2=AeGrI_W3z9vLHWDV0HS-0uYc-hVBpkMYS7r6FUGmQxhLuhjqStbGD39iw-kDPd0sCZzHLFF8iggafsW4sc7l_1Mn&_nc_ohc=VjSWy68S8iUQ7kNvgGSm4e3&_nc_ht=scontent-los2-1.xx&_nc_gid=A8r71txUnRNcBuoYzFFanrz&oh=00_AYCCa4mRKAh5NGn8v_P7ONZR0E-xPY3vM-U6zdlWrOixIw&oe=66EA2CCF](https://scontent-los2-1.xx.fbcdn.net/v/t39.8562-6/448400385_1192671258431902_561156009842405502_n.png?_nc_cat=103&ccb=1-7&_nc_sid=f537c7&_nc_eui2=AeGrI_W3z9vLHWDV0HS-0uYc-hVBpkMYS7r6FUGmQxhLuhjqStbGD39iw-kDPd0sCZzHLFF8iggafsW4sc7l_1Mn&_nc_ohc=VjSWy68S8iUQ7kNvgGSm4e3&_nc_ht=scontent-los2-1.xx&_nc_gid=A8r71txUnRNcBuoYzFFanrz&oh=00_AYCCa4mRKAh5NGn8v_P7ONZR0E-xPY3vM-U6zdlWrOixIw&oe=66EA2CCF)  
@@ -56,11 +60,11 @@ auth_code = api.get_auth_token(
 print("token", token)
 ```
   
-To get a list of all `scope`s that can be passed to the `get_auth_token` method, get it from the `ThreadsPipe.__threads_auth_scope__.keys()` or `api.__threads_auth_scope__.keys()` this will list out all the possible values of scopes that you pass to the `scope` parameter.  
+To get a list of all `scope`s that can be passed to the `get_auth_token` method, get it from the `ThreadsPipe.__threads_auth_scope__.keys()` or `api.__threads_auth_scope__.keys()` this will list out all of the possible values of scopes that you can pass to the `scope` parameter.  
   
 This will open the Threads authorization window/web page and the user will be asked to grant your app access (might also be required to sign in if not signed in), then the user will be redirected to your redirect_uri after granting or rejecting the permission, if the user grants your app the permission then the authorization code will be in the redirect uri as mentioned above.  
   
-Then after getting the authorization code, it's time to swap it for both short and long lived access tokens, the short lived access token is only valid for 1 hour and the long lived access token for 60 days. To get both tokens:
+Then after getting the authorization code, it's time to swap it for both short and long lived access tokens, don't worry ThreadsPipe will generate both for you at once, the short lived access token is only valid for 1 hour and the long lived access token for 60 days. To get both tokens:
 
 ```py
 tokens = api.get_access_tokens(
@@ -73,7 +77,7 @@ tokens = api.get_access_tokens(
 print("access_token", tokens)
 ```
 
-Then this will return the `user_id`, the short and long lived access tokens, then you are ready to start making requests, you can then update the access_token and user_id parameters in ThreadsPipe, to update these parameters simply call the `ThreadsPipe.update_param` the method can update any parameters that can be passed to the `threadspipe.ThreadsPipe` object, example
+Then this will return the `user_id`, the short and long lived access tokens, then you are ready to start making requests, you can then update the access_token and user_id parameters in ThreadsPipe, to update these parameters simply call the `ThreadsPipe.update_param`, the method can update any parameters that can be passed to the `threadspipe.ThreadsPipe` object, example
 
 ```py
 api.update_param(
@@ -123,7 +127,7 @@ The length of the `post` can be more than the limit which is currently 500 chara
   
 ### Uploading locally available files to Threads
 
-By default Threads only allow providing the links to files that are on a public server for upload, but to fix this issue ThreadsPipe is going to upload your local files to GitHub first, get their download links and provide them to Threads, and then delete them immediately after sending the post or if it encountered an error and couldn't publish the post, all you need to do is to create a github repository where ThreadsPipe will be uploading the local files to, then create a fine-grained access token at [https://github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta), then provide your github username, you will be passing these data to the ThreadsPipe class upon initialization else you will get an error when you try to upload local files, example below
+By default Threads only allows providing the links to files that are on a public server for upload, but to fix this issue ThreadsPipe is going to upload your local files to GitHub first, get their download links and provide them to Threads, and then delete them immediately after sending the post or if it encountered an error and couldn't publish the post, all you need to do is to create a github repository where ThreadsPipe will be uploading the local files to, then create a fine-grained access token at [https://github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta), then provide your github username, you will be passing these data to the ThreadsPipe class upon initialization or use the `ThreadsPipe.update_param` to update the github parameters needed for the temporary file upload to GitHub else you will get an error when you try to upload local files, example below
 
 ```py
 api = ThreadsPipe(
@@ -131,6 +135,13 @@ api = ThreadsPipe(
     user_id=user_id, # The user_id of the Threads account, read more below
     handle_hashtags=True, # read more on handle_hashtags below
     auto_handle_hashtags=False, # read more on auto_handle_hashtags below
+    gh_bearer_token = 'github-fined-grain-token',
+    gh_repo_name = 'threadspipe-uploads',
+    gh_username = 'example',
+)
+
+# OR
+api.update_param(
     gh_bearer_token = 'github-fined-grain-token',
     gh_repo_name = 'threadspipe-uploads',
     gh_username = 'example',
@@ -149,7 +160,7 @@ To generated short and long lived access tokens, I will assume you have already 
 threadspipe access_token --app_id=your-app-id --auth_code="the-auth-code" --app_secret="your-app-secret" --redirect_uri='https://redirect-uri.com/redirect' --env_path="./.env" --env_variable=long_lived_token_variable
 ```
 
-The command will generate access tokens by swapping the authentication code for both short and long lived access tokens, all the optional arguments are required and only the `--env_path` and `--env_variable` arguments are optional, set both arguments if you want to automatically update an environment variable with the generated long lived access token.  
+The command will generate access tokens by swapping the authentication code for both short and long lived access tokens, all the optional arguments are required and only the `--env_path` and `--env_variable` arguments are optional, set both the `--env_path` and `--env_variable` arguments if you want to automatically update an environment variable with the generated long lived access token, more details below.  
   
 #### To refresh long lived access token
   
@@ -159,8 +170,10 @@ Only long lived access token can be refreshed, short lived access token can not 
 threadspipe refresh_token --access_token="your-unexpired-long-lived-access-token" --env_path="./.env" --env_variable="acc_tkn"
 ```
 
-This will refresh the long lived access token and then automatically update the provided environment variable with the newly generate long lived token, but the  `--env_path` and `--env_variable` arguments are optional, there are also additional 2 options that can be passed in which the later will also work for access tokens generation above, `--auto_mode=true` and `--silent=true`, if the `auto_mode` is set to `true` then the `--env_path` and `--env_variable` arguments will be required for this operation and the `--access_token` argument will be ignored and the value of the `--env_variable` in the provided `.env` file will be used in making the refresh token request and then will also be automatically updated with the newly generated long lived access token. see below for more explanations.
-
+This will refresh the long lived access token and then automatically update the provided environment variable with the newly generate long lived token, but the  `--env_path` and `--env_variable` arguments are optional, there are also additional 2 options that can be passed in which the later will also work for access tokens generation above, `--auto_mode=true` and `--silent=true`, if the `--auto_mode` is set to `true` e.g. `... --auto_mode=true` then the `--env_path` and `--env_variable` arguments will be required to be set for this operation and the `--access_token` argument will be ignored and the value of the `--env_variable` in the provided `.env` file will be used in making the refresh token request and then will also be automatically updated with the newly generated long lived access token. see below for more explanations, use the `--silent=true` if you want to disable logging.  
+  
+Type `threadspipe -h` in the terminal for help and more details of ThreadsPipe CLI usage. You can also read more on the commands below.  
+  
 Read more below.  
   
 ## Class Object, properties and methods
@@ -168,8 +181,7 @@ Read more below.
 ### Methods
   
 - ThreadsPipe.update_param  
-To update the default class parameters, not it is not guarateed that the updated value of a parameter will be used if this method is called before performing an
-action on the parameter, so it is recommended to call this method to set the parameter before performing the action on the parameter that was set.
+To update the default class parameters, it is not guaranteed that the updated value of the parameter(s) will be used if this method is called before performing an action with the parameter(s) that was set with the method, so it is recommended to call this method to set the parameter(s) before performing the action(s) with the parameter(s) that was set.
   
 - ThreadsPipe.pipe  
 The pipe method is for sending posts and replies to Threads.  
@@ -226,7 +238,7 @@ The method to get the follow intent link, this intents allow people to easily fo
   
 ### Properties
   
-- ThreadsPipe.__threads_auth_scope__  
+- `ThreadsPipe.__threads_auth_scope__`  
   
 - ThreadsPipe.threads_post_insight_metrics  
   
@@ -259,8 +271,6 @@ api = ThreadsPipe(
 )
 ```
   
-- Parameters  
-  
 **Example**  
   
 ```py
@@ -277,6 +287,8 @@ api = ThreadsPipe(
         gh_username = 'your-github-username',
     )
 ```
+  
+- Parameters  
   
 user_id: `int`  The user_id of the Threads account, which is part of the data returned when you call the `get_access_tokens` method.  
   
@@ -313,6 +325,9 @@ check_rate_limit_before_post: `bool | True` By default ThreadsPipe checks rate l
   
 ### ThreadsPipe.pipe
   
+- Description  
+The pipe method is for sending posts and replies to Threads, you can also make geo-gated post and replies which requires the user to have the geo-gating permission.  
+  
 ```py
 api.pipe(
     post: Optional[str] = "", 
@@ -326,9 +341,6 @@ api.pipe(
     allowed_country_codes: str | List[str] = None,
 )
 ```
-  
-- Description  
-The pipe method is for sending posts and replies to Threads, you can also make geo-gated post and replies which requires the user to have the geo-gating permission.  
   
 **Example**  
   
@@ -393,12 +405,12 @@ dict | requests.Response | Response
   
 ### ThreadsPipe.get_quota_usage
   
+- Description  
+The method to get user's quota usage  
+  
 ```py
 api.get_quota_usage(for_reply=False)
 ```
-  
-- Description  
-The method to get user's quota usage
   
 **Parameters**  
 *for_reply*: `bool | False` Set this parameter to `True` to get the media reply post reply quota usage, default is `False` which returns the quota usage for posts.
@@ -408,6 +420,9 @@ requests.Response | Response | None
   
 ### ThreadsPipe.get_auth_token
   
+**Description**  
+Use this method to implement the Authorization Window, The Authorization Window allows your app to get authorization codes and permissions from app users. Authorization codes can be exchanged for Threads user access tokens, which must be included when fetching an app user's profile, retrieving Threads media, publishing posts, reading replies, managing replies, or viewing insights.  
+  
 ```py
 api.get_auth_token(
     app_id: str, 
@@ -416,9 +431,6 @@ api.get_auth_token(
     state: str | None = None
 )
 ```
-  
-**Description**  
-Use this method to implement the Authorization Window, The Authorization Window allows your app to get authorization codes and permissions from app users. Authorization codes can be exchanged for Threads user access tokens, which must be included when fetching an app user's profile, retrieving Threads media, publishing posts, reading replies, managing replies, or viewing insights.  
   
 **Parameters**  
 *app_id*: `str` Your Threads app id which can be found on the `Use cases > Customize > Settings` page.  
@@ -433,6 +445,9 @@ Use this method to implement the Authorization Window, The Authorization Window 
 None
   
 ### ThreadsPipe.update_param
+  
+**Description**  
+To update the default class parameters, it is not guaranteed that the updated value of the parameter(s) will be used if this method is called before performing an action with the parameter(s) that was set with the method, so it is recommended to call this method to set the parameter(s) before performing the action(s) with the parameter(s) that was set.
   
 ```py
 api.update_param(
@@ -455,9 +470,6 @@ api.update_param(
 )
 ```
   
-**Description**  
-To update the default class parameters, not it is not guarateed that the updated value of a parameter will be used if this method is called before performing an action on the parameter, so it is recommended to call this method to set the parameter before performing the action on the parameter that was set.  
-  
 **Example**  
   
 ```py
@@ -473,6 +485,9 @@ See the `ThreadsPipe class` above for more info on the parameters.
   
 ### ThreadsPipe.get_access_tokens
   
+**Description**  
+This method swaps the access token gotten from Authorization Window for short and long lived access token.  
+  
 **Example**  
   
 ```py
@@ -483,9 +498,6 @@ api.get_access_tokens(
     redirect_uri: str
 )
 ```
-  
-**Description**  
-This method swaps the access token gotten from Authorization Window for short and long lived access token.  
   
 **Parameters**  
   
@@ -502,6 +514,9 @@ dict | JSON
   
 ### ThreadsPipe.refresh_token
   
+**Description**  
+Use this method to refresh unexpired long lived access tokens before they expire, long lived access tokens expire after 60 days, and you can only refresh long lived token and anytime after it is at least 24 hours old.  
+  
 ```py
 api.refresh_token(
     access_token: str, 
@@ -509,9 +524,6 @@ api.refresh_token(
     env_variable: str = None
 )
 ```
-  
-**Description**  
-Use this method to refresh unexpired long lived access tokens before they expire, long lived access tokens expire after 60 days, and you can only refresh long lived token and anytime after it is at least 24 hours old.  
   
 **Parameters**  
 *access_token*: `str` The long lived access token that will be refreshed for a new and life-extended one.  
@@ -525,12 +537,12 @@ JSON
   
 ### ThreadsPipe.is_eligible_for_geo_gating
   
+**Description**  
+Use this method to check for an account's eligibility for posting geo-gated contents.  
+  
 ```py
 api.is_eligible_for_geo_gating()
 ```
-  
-**Description**  
-Use this method to check for an account's eligibility for posting geo-gated contents.  
   
 **Parameters**  
 *None*
@@ -540,14 +552,14 @@ JSON
   
 ### ThreadsPipe.get_allowlisted_country_codes
   
+**Description**  
+Use this method to get a list of the country code values that can be used to limit geo-gating contents.  
+  
 ```py
 api.get_allowlisted_country_codes(
     limit: str | int = None
 ):
 ```
-  
-**Description**  
-Use this method to get a list of the country code values that can be used to limit geo-gating contents.  
   
 **Parameters**  
 *limit*: `str | int | None` Use this parameter to limit the amount of data returned.  
@@ -557,6 +569,9 @@ JSON
   
 ### ThreadsPipe.get_posts
   
+**Description**  
+This method returns all the posts an account has posted including the replies.  
+  
 ```py
 api.get_posts(
     since_date: str | None = None, 
@@ -564,9 +579,6 @@ api.get_posts(
     limit: str | int | None = None
 )
 ```
-  
-**Description**  
-This method returns all the posts an account has posted including the replies.  
   
 **Parameters**  
 *since_date*: `str | None` Set the start of the date that the posts should be returned from.  
@@ -580,12 +592,12 @@ JSON
   
 ### ThreadsPipe.get_post
   
+**Description**  
+This method returns the data of a single post.  
+  
 ```py
 api.get_post(post_id: str)
 ```
-  
-**Description**  
-This method returns the data of a single post.  
   
 **Parameter**  
 *post_id*: `str` The id of the post you want to get the data.  
@@ -594,13 +606,13 @@ This method returns the data of a single post.
 JSON
   
 ### ThreadsPipe.get_profile
-
-```py
-api.get_profile()
-```
   
 **Description**  
 The method to get user profile.  
+  
+```py
+api.get_profile()
+```
   
 **Parameters**  
 None  
@@ -610,6 +622,9 @@ JSON
   
 ### ThreadsPipe.get_post_replies
   
+**Description**  
+The method to get post replies.  
+  
 ```py
 api.get_post_replies(
     post_id: str, 
@@ -617,9 +632,6 @@ api.get_post_replies(
     reverse=False
 )
 ```
-  
-**Description**  
-The method to get post replies.  
   
 **Parameters**  
 *post_id*: `str` The of the post you want to get its replies.  
@@ -633,6 +645,9 @@ JSON
   
 ### ThreadsPipe.get_user_replies
   
+**Description**  
+The method to get all user's replies.  
+  
 ```py
 api.get_user_replies(
     since_date: str | None = None, 
@@ -640,9 +655,6 @@ api.get_user_replies(
     limit: int | str = None
 )
 ```
-  
-**Description**  
-The method to get all user's replies.  
   
 **Parameter**  
 *since_date*: `str | None` The start of the date to return the data from.  
@@ -656,15 +668,15 @@ JSON
   
 ### ThreadsPipe.hide_reply
   
+**Description**  
+The method to hide a reply under a user's post.  
+  
 ```py
 api.hide_reply(
     reply_id: str, 
     hide: bool
 )
 ```
-  
-**Description**  
-The method to hide a reply under a user's post.  
   
 **Parameters**  
 *reply_id*: `str` The id of the reply that you want to hide.  
@@ -676,15 +688,15 @@ JSON
   
 ### ThreadsPipe.get_post_insights
   
+**Description**  
+The method to get post insights, like number of like, view and so on.  
+  
 ```py
 api.get_post_insights(
     post_id: str, 
     metrics: str | List[str] = 'all'
 )
 ```
-  
-**Description**  
-The method to get post insights, like number of like, view and so on.  
   
 **Parameters**  
 *post_id*: `str` The id of the post you want to get insights for.  
@@ -696,6 +708,9 @@ JSON
   
 ### ThreadsPipe.get_user_insights
   
+**Description**  
+The method to get user's account insights.  
+  
 ```py
 api.get_user_insights(
     user_id: str | None = None, 
@@ -705,9 +720,6 @@ api.get_user_insights(
     metrics: str | List[str] = 'all'
 )
 ```
-  
-**Description**  
-The method to get user's account insights.  
   
 **Parameters**  
 *user_id*: `str | None` The optional user id if you want to get the account insights for another user that's different from the currently connected one to ThreadsPipe.  
@@ -725,15 +737,15 @@ JSON
   
 ### ThreadsPipe.get_post_intent
   
+**Description**  
+The method to get Threads' post intent.  
+  
 ```py
 api.get_post_intent(
     text: str = None, 
     link: str = None
 )
 ```
-  
-**Description**  
-The method to get Threads' post intent.  
   
 **Parameters**  
 *text*: `str | None` The text content of the post.  
@@ -745,14 +757,14 @@ str
   
 ### ThreadsPipe.get_follow_intent
   
+**Description**  
+The method to get the follow intent link, this intents allow people to easily follow a Threads account directly from your website.  
+  
 ```py
 api.get_follow_intent(
     username: str | None = None
 )
 ```
-  
-**Description**  
-The method to get the follow intent link, this intents allow people to easily follow a Threads account directly from your website.  
   
 **Parameters**  
 *username*: `str | None` The username you want to get the follow intent for, leave this as `None` to automatically use the connected account.  
@@ -760,8 +772,36 @@ The method to get the follow intent link, this intents allow people to easily fo
 *Returns*  
 str  
   
+## ThreadsPipe CLI
+  
+### access_token command
+  
+This command will generate both short and long lived access tokens with the authorization code.  
+  
+Arguments | Required | short form | Description
+action  | `True` | *not applicable* | positional argument in which in this case is `access_token`, or simply the action you want to perform.
+--app_id | `True` | `-id` | The same app id you used when getting the authentication code from the Authentication Window.
+--app_secret | `True` | `-secret` | Your app secret, it can be gotten from the `Use cases > Customize > Settings` page in the Threads App secret input box in the app dashboard.
+--auth_code | `True` | `-code` | The authentication code that was gotten from the redirect url of the Authorization Window, Note this code can only be used once.
+--redirect_uri | `True` | `-r` | This redirect uri should be the same as the value of the `redirect_uri` argument passed to the `get_auth_token` method or the request will be rejected and the authorization token will be expired.
+--env_path | `False` | `-p` | This is optional, and it is useful and only required if you want ThreadsPipe to automatically update a variable in an .env file with the long lived token access token.
+--env_variable | `False` | `-v` | The name of the variable that ThreadsPipe should automatically update with the long lived access token.
+--silent | `False` | `-s` | Set this to 'true' if you want to disable logging.  
+  
+### refresh_token command
+  
+This command will refresh your long lived access token with a new and life-extended one.  
+  
+Arguments | Required | short form | Description
+action | `True` | *not applicable* | positional argument in which in this case is `refresh_token`, or simply the action you want to perform.
+--access_token | `True` if the `--auto_mode` argument is not set and `False` if not set | `-token` | If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token.
+--auto_mode | `False` | `-auto` | If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token.
+--env_path | `True` if the `--auto_mode` argument is set and `False` if not set | `-p` | Absolute or relative path to the `.env` file, this is optional, but it is required if `--auto_mode` is set to `true` and in that case the `--access_token` argument will be ignored and the value of the `--env_variable` in the provided `.env` (which is expected to be the long lived access token) file will be used to make the refresh token refresh and then will be updated with the new and life-extended long lived access token
+--env_variable | `True` if the `--auto_mode` argument is set and `False` if not set | `-v` | The name of the variable that ThreadsPipe should automatically update with the long lived access token.
+--silent | `False` | `-s` | Set this to 'true' if you want to disable logging. 
+  
 ## LICENSE
 
 MIT  
   
-Created with &#heart; by Abayomi Amusa
+Created with :heart: by Abayomi Amusa
