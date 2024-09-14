@@ -1,7 +1,9 @@
-import pytest, sys
-sys.path.append('./../threadspipepy/')
+import pytest, sys, os
 
-from threadspipepy.threadspipepy.threadspipe import ThreadsPipe
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(root_dir)
+
+from threadspipepy.threadspipe import ThreadsPipe
 
 
 def test_user_id_nd_access_token_type_error():
