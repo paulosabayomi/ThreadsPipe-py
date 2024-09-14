@@ -303,7 +303,7 @@ class ThreadsPipe:
             file_captions: List[str] = [],
             tags: Optional[List] = [],
             reply_to_id: Optional[str] = None, 
-            who_can_reply: str | None = None,
+            who_can_reply: str = None,
             chained_post = True, 
             persist_tags_multipost = False,
             allowed_country_codes: str | List[str] = None,
@@ -521,7 +521,7 @@ class ThreadsPipe:
         else:
             return None
         
-    def get_auth_token(self, app_id: str, redirect_uri: str, scope: str | List[str] = 'all', state: str | None = None):
+    def get_auth_token(self, app_id: str, redirect_uri: str, scope: str | List[str] = 'all', state: str = None):
         """
             ## ThreadsPipe.get_auth_token
 
@@ -710,7 +710,7 @@ class ThreadsPipe:
         request_list = requests.get(url)
         return request_list.json()
 
-    def get_posts(self, since_date: str | None = None, until_date: str | None = None, limit: str | int | None = None):
+    def get_posts(self, since_date: str = None, until_date: str = None, limit: str | int = None):
         """
             ## ThreadsPipe.get_posts
 
@@ -804,7 +804,7 @@ class ThreadsPipe:
         req_replies = requests.get(url)
         return req_replies.json()
     
-    def get_user_replies(self, since_date: str | None = None, until_date: str | None = None, limit: int | str = None):
+    def get_user_replies(self, since_date: str = None, until_date: str = None, limit: int | str = None):
         """
             ## ThreadsPipe.get_user_replies
 
@@ -890,7 +890,7 @@ class ThreadsPipe:
         req_insight = requests.get(url)
         return req_insight.json()
     
-    def get_user_insights(self, user_id: str | None = None, since_date: str | None = None, until_date: str | None = None, follower_demographic_breakdown: str = 'country', metrics: str | List[str] = 'all'):
+    def get_user_insights(self, user_id: str = None, since_date: str = None, until_date: str = None, follower_demographic_breakdown: str = 'country', metrics: str | List[str] = 'all'):
         """
             ## ThreadsPipe.get_user_insights
 
@@ -959,7 +959,7 @@ class ThreadsPipe:
         _url = "" if link is None else "&url=" + urlp.quote(link,safe="")
         return f"https://www.threads.net/intent/post?text={_text}{_url}"
     
-    def get_follow_intent(self, username: str | None = None):
+    def get_follow_intent(self, username: str = None):
         """
             ## ThreadsPipe.get_follow_intent
 
@@ -984,8 +984,8 @@ class ThreadsPipe:
             medias: Optional[List] = [], 
             media_captions: List[str | None] = [],
             reply_to_id: Optional[str] = None,
-            allowed_listed_country_codes: str | None = None,
-            who_can_reply: str | None = None
+            allowed_listed_country_codes: str = None,
+            who_can_reply: str = None
         ):
         """
             ### ThreadsPipe.__send_post__
