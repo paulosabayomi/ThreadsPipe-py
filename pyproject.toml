@@ -1,5 +1,5 @@
 [project]
-name = "threadspipe-py"
+name = "threadspipepy"
 version = "0.0.1"
 authors = [
   { name="Abayomi Amusa", email="amusapaulos99@gmail.com" },
@@ -12,9 +12,9 @@ readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+license = {file = "LICENSE"}
 dependencies = [
   "filetype",
   "python-dotenv", "colorama"

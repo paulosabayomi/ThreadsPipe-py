@@ -1,24 +1,24 @@
-# ThreadsPipe
+# ThreadsPipePy
 
-threadspipe-py Python library uses the official Meta's Threads API to perform actions on a user's account, actions like create post, respond to posts and replies, get posts and users account insights and many more.
+threadspipepy Python library uses the official Meta's Threads API to perform actions on a user's account, actions like create post, respond to posts and replies, get posts and user's account insights and many more.
 
 ## Instalation
 
 ```bash
-pip install threadspipe-py
+pip install threadspipepy
 # OR
-# pip3 install threadspipe-py
+# pip3 install threadspipepy
 ```
 
-If you want to add the dependencies required for the threadspipe CLI, install ThreadsPipe with
+If you want to add the dependencies required for the threadspipepy CLI, install ThreadsPipe with
 
 ```bash
-pip install threadspipe-py[cli]
+pip install threadspipepy[cli]
 # OR
-# pip3 install threadspipe-py[cli]
+# pip3 install threadspipepy[cli]
 ```
 
-This will install ThreadsPipe, the dependencies and the CLI dependencies
+This will install ThreadsPipePy, the dependencies and the CLI dependencies
 
 ## Setup
 
@@ -150,14 +150,14 @@ api.update_param(
   
 ### Using the ThreadsPipe CLI
 
-With the ThreadsPipe CLI you can get access tokens (short and long lived) and you can also refresh the long lived access token before it expires. To use the CLI you can install ThreadsPipe with the `pip install threadspipe-py[cli]` command and it will either only install the dependencies requires for the CLI if you already have ThreadsPipe installed or install the CLI dependencies along with the ThreadsPipe installation.  
+With the ThreadsPipe CLI you can get access tokens (short and long lived) and you can also refresh the long lived access token before it expires. To use the CLI you can install ThreadsPipe with the `pip install threadspipepy[cli]` command and it will either only install the dependencies requires for the CLI if you already have ThreadsPipe installed or install the CLI dependencies along with the ThreadsPipe installation.  
   
 #### To generate short and long lived access tokens
 
 To generated short and long lived access tokens, I will assume you have already gotten the authorization code, if yes then the command is as follows:
 
 ```bash
-threadspipe access_token --app_id=your-app-id --auth_code="the-auth-code" --app_secret="your-app-secret" --redirect_uri='https://redirect-uri.com/redirect' --env_path="./.env" --env_variable=long_lived_token_variable
+threadspipepy access_token --app_id=your-app-id --auth_code="the-auth-code" --app_secret="your-app-secret" --redirect_uri='https://redirect-uri.com/redirect' --env_path="./.env" --env_variable=long_lived_token_variable
 ```
 
 The command will generate access tokens by swapping the authentication code for both short and long lived access tokens, all the optional arguments are required and only the `--env_path` and `--env_variable` arguments are optional, set both the `--env_path` and `--env_variable` arguments if you want to automatically update an environment variable with the generated long lived access token, more details below.  
@@ -167,12 +167,12 @@ The command will generate access tokens by swapping the authentication code for 
 Only long lived access token can be refreshed, short lived access token can not be refreshed after it has expired, long lived access token expires after 60 days and you can refresh them after they are at least 24 hours old, so to refresh the long lived token with the ThreadsPipe CLI, this can also be done with the `refresh_token` method, run the commands below:
 
 ```bash
-threadspipe refresh_token --access_token="your-unexpired-long-lived-access-token" --env_path="./.env" --env_variable="acc_tkn"
+threadspipepy refresh_token --access_token="your-unexpired-long-lived-access-token" --env_path="./.env" --env_variable="acc_tkn"
 ```
 
 This will refresh the long lived access token and then automatically update the provided environment variable with the newly generate long lived token, but the  `--env_path` and `--env_variable` arguments are optional, there are also additional 2 options that can be passed in which the later will also work for access tokens generation above, `--auto_mode=true` and `--silent=true`, if the `--auto_mode` is set to `true` e.g. `... --auto_mode=true` then the `--env_path` and `--env_variable` arguments will be required to be set for this operation and the `--access_token` argument will be ignored and the value of the `--env_variable` in the provided `.env` file will be used in making the refresh token request and then will also be automatically updated with the newly generated long lived access token. see below for more explanations, use the `--silent=true` if you want to disable logging.  
   
-Type `threadspipe -h` in the terminal for help and more details of ThreadsPipe CLI usage. You can also read more on the commands below.  
+Type `threadspipepy -h` in the terminal for help and more details of ThreadsPipe CLI usage. You can also read more on the commands below.  
   
 Read more below.  
   
@@ -802,6 +802,6 @@ action | `True` | *not applicable* | positional argument in which in this case i
   
 ## LICENSE
 
-[MIT License](https://github.com/paulosabayomi/ThreadsPipe-py/blob/main/LICENSE)  
+[MIT License](https://github.com/paulosabayomi/ThreadsPipepy/blob/main/LICENSE)  
   
 Created with :heart: by Abayomi Amusa

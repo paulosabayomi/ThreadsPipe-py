@@ -1040,12 +1040,12 @@ class ThreadsPipe:
 
                 logging.info(f"Media/file at index {media_cont.index(media)} uploaded {req_post.json()}")
 
-                media_debug = self.__upload_post__(req_post.json()['id'])
+                media_debug = self.__get_uploaded_post_status__(req_post.json()['id'])
                 f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {media_cont.index(media)} to be 'FINISHED'" if media_debug['status'] != "FINISHED" else ''
                 logging.info(f"Media upload debug for media/file at index {media_cont.index(media)}:: {media_debug}{f_info}")
                 while media_debug['status'] != "FINISHED":
                     time.sleep(self.__media_item_publish_wait_time__)
-                    media_debug = self.__upload_post__(req_post.json()['id'])
+                    media_debug = self.__get_uploaded_post_status__(req_post.json()['id'])
                     f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {media_cont.index(media)} to be 'FINISHED'" if media_debug['status'] != "FINISHED" else ''
                     logging.info(f"Media upload debug for media/file at index {media_cont.index(media)}:: {media_debug}{f_info}")
                     if media_debug['status'] == 'ERROR':
@@ -1104,13 +1104,13 @@ class ThreadsPipe:
 
         delete_gh_files = True
         try:
-            post_debug = self.__upload_post__(MEDIA_CONTAINER_ID)
+            post_debug = self.__get_uploaded_post_status__(MEDIA_CONTAINER_ID)
             d_info = '\n::Note:: waiting for the post\'s ready status to be \'FINISHED\'' if post_debug['status'] != 'FINISHED' else ''
             logging.info(f"Post publish-ready status:: {post_debug}{d_info}")
 
             while post_debug['status'] != 'FINISHED':
                 time.sleep(self.__post_publish_wait_time__)
-                post_debug = self.__upload_post__(MEDIA_CONTAINER_ID)
+                post_debug = self.__get_uploaded_post_status__(MEDIA_CONTAINER_ID)
                 d_info = '\n::Note:: waiting for the post\'s ready status to be \'FINISHED\'' if post_debug['status'] != 'FINISHED' else ''
                 logging.info(f"Post publish-ready status:: {post_debug}{post_debug}{d_info}")
                 if post_debug['status'] == 'ERROR':
@@ -1133,7 +1133,7 @@ class ThreadsPipe:
                     is_error=True
                 )
 
-            post_debug = self.__upload_post__(MEDIA_CONTAINER_ID)
+            post_debug = self.__get_uploaded_post_status__(MEDIA_CONTAINER_ID)
             if post_debug['status'] != 'PUBLISHED':
                 self.__delete_uploaded_files__(files=self.__handled_media__)
                 delete_gh_files = False
@@ -1152,7 +1152,7 @@ class ThreadsPipe:
                 self.__delete_uploaded_files__(files=self.__handled_media__)  
 
             if len(medias) > 0:
-                debug = self.__upload_post__(MEDIA_CONTAINER_ID)
+                debug = self.__get_uploaded_post_status__(MEDIA_CONTAINER_ID)
             
             logging.error(f"Could not send post")
             logging.error(f"Exception: {e}")
@@ -1165,9 +1165,9 @@ class ThreadsPipe:
                 is_error=True
             )
     
-    def __upload_post__(self, media_id: int):
+    def __get_uploaded_post_status__(self, media_id: int):
         """
-            ### ThreadsPipe.__upload_post__
+            ### ThreadsPipe.__get_uploaded_post_status__
 
             #### Description
             The method to provide information on the status of post and media item/file upload
