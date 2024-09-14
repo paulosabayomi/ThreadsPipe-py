@@ -3,7 +3,9 @@
 threadspipepy Python library uses the official Meta's Threads API to perform actions on a user's account, actions like create post, respond to posts and replies, get posts and user's account insights and many more.
 
 ## Instalation
-
+  
+Installation requires at least Python 3.8  
+  
 ```bash
 pip install threadspipepy
 # OR

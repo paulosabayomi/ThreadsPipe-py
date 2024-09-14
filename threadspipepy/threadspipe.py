@@ -6,7 +6,7 @@
 import requests, base64, time, logging, re, math, filetype, string, random, datetime, webbrowser
 import urllib.parse as urlp
 
-from  typing import Optional, List, Any
+from  typing import Optional, List, Any, Union
 from dotenv import set_key
 
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
@@ -300,13 +300,13 @@ class ThreadsPipe:
             self, 
             post: Optional[str] = "", 
             files: Optional[List] = [], 
-            file_captions: List[str] = [],
+            file_captions: List[Union[str, None]] = [],
             tags: Optional[List] = [],
             reply_to_id: Optional[str] = None, 
-            who_can_reply: str = None,
+            who_can_reply: Union[str, None] = None,
             chained_post = True, 
             persist_tags_multipost = False,
-            allowed_country_codes: str | List[str] = None,
+            allowed_country_codes: Union[str | List[str]] = None,
         ):
 
         """
@@ -521,7 +521,7 @@ class ThreadsPipe:
         else:
             return None
         
-    def get_auth_token(self, app_id: str, redirect_uri: str, scope: str | List[str] = 'all', state: str = None):
+    def get_auth_token(self, app_id: str, redirect_uri: str, scope: Union[str, List[str]] = 'all', state: Union[str, None] = None):
         """
             ## ThreadsPipe.get_auth_token
 
@@ -690,7 +690,7 @@ class ThreadsPipe:
             )
         return send_request.json()
     
-    def get_allowlisted_country_codes(self, limit: str | int = None):
+    def get_allowlisted_country_codes(self, limit: Union[str, int] = None):
         """
             ## ThreadsPipe.get_allowlisted_country_codes
 
@@ -710,7 +710,7 @@ class ThreadsPipe:
         request_list = requests.get(url)
         return request_list.json()
 
-    def get_posts(self, since_date: str = None, until_date: str = None, limit: str | int = None):
+    def get_posts(self, since_date: Union[str, None] = None, until_date: Union[str, None] = None, limit: Union[str, int, None] = None):
         """
             ## ThreadsPipe.get_posts
 
@@ -804,7 +804,7 @@ class ThreadsPipe:
         req_replies = requests.get(url)
         return req_replies.json()
     
-    def get_user_replies(self, since_date: str = None, until_date: str = None, limit: int | str = None):
+    def get_user_replies(self, since_date: Union[str, None] = None, until_date: Union[str, None] = None, limit: Union[int, str] = None):
         """
             ## ThreadsPipe.get_user_replies
 
@@ -862,7 +862,7 @@ class ThreadsPipe:
         )
         return req_hide_reply.json()
     
-    def get_post_insights(self, post_id: str, metrics: str | List[str] = 'all'):
+    def get_post_insights(self, post_id: str, metrics: Union[str, List[str]] = 'all'):
         """
             ## ThreadsPipe.get_post_insights
 
@@ -890,7 +890,7 @@ class ThreadsPipe:
         req_insight = requests.get(url)
         return req_insight.json()
     
-    def get_user_insights(self, user_id: str = None, since_date: str = None, until_date: str = None, follower_demographic_breakdown: str = 'country', metrics: str | List[str] = 'all'):
+    def get_user_insights(self, user_id: Union[str, None] = None, since_date: Union[str, None] = None, until_date: Union[str, None] = None, follower_demographic_breakdown: str = 'country', metrics: Union[str, List[str]] = 'all'):
         """
             ## ThreadsPipe.get_user_insights
 
@@ -959,7 +959,7 @@ class ThreadsPipe:
         _url = "" if link is None else "&url=" + urlp.quote(link,safe="")
         return f"https://www.threads.net/intent/post?text={_text}{_url}"
     
-    def get_follow_intent(self, username: str = None):
+    def get_follow_intent(self, username: Union[str, None] = None):
         """
             ## ThreadsPipe.get_follow_intent
 
@@ -982,10 +982,10 @@ class ThreadsPipe:
             self, 
             post: str = None, 
             medias: Optional[List] = [], 
-            media_captions: List[str | None] = [],
+            media_captions: List[Union[str, None]] = [],
             reply_to_id: Optional[str] = None,
-            allowed_listed_country_codes: str = None,
-            who_can_reply: str = None
+            allowed_listed_country_codes: Union[str, None] = None,
+            who_can_reply: Union[str, None] = None
         ):
         """
             ### ThreadsPipe.__send_post__
@@ -1220,23 +1220,23 @@ class ThreadsPipe:
         return tagged_post + untagged_post
         
 
-    def __should_handle_hash_tags__ (self, post: None | str):
+    def __should_handle_hash_tags__ (self, post: Union[None, str]):
         if post == None:
             return False
         return len(re.compile(r"([\w\s]+)?(\#\w+)\s?\w+").findall(post)) == 0 if self.__auto_handle_hashtags__ == True else self.__handle_hashtags__
 
     @staticmethod
-    def __quote_str__(text):
+    def __quote_str__(text: str):
         return urlp.quote(text)
     
     @staticmethod
-    def __rand_str__(length):
+    def __rand_str__(length: int):
         characters = string.ascii_letters + string.digits
         random_string = ''.join(random.choice(characters) for _ in range(length))
         return random_string
     
     @staticmethod
-    def __is_base64__(o_str):
+    def __is_base64__(o_str: str):
         if not o_str or len(o_str) % 4 != 0:
             return False
 
@@ -1308,7 +1308,7 @@ class ThreadsPipe:
 
         return self.__handled_media__
     
-    def __get_file_url__(self, file, file_index: int):
+    def __get_file_url__(self, file: Any, file_index: int):
         if self.__gh_bearer_token__ == None or self.__gh_username__ == None or self.__gh_repo_name__ == None:
             logging.error(f"To handle local file uploads to threads please provide your GitHub fine-grained access token, your GitHub username and the name of your GitHub repository to be used for the temporary file upload")
             return self.__tp_response_msg__(
