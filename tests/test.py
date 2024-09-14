@@ -1,7 +1,7 @@
 import pytest, sys
 sys.path.append('./../threadspipepy')
 
-from threadspipepy.threadspipe import ThreadsPipe
+from threadspipe import ThreadsPipe
 
 
 def test_user_id_nd_access_token_type_error():
