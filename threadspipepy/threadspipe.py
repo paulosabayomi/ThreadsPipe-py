@@ -300,7 +300,7 @@ class ThreadsPipe:
             self, 
             post: Optional[str] = "", 
             files: Optional[List] = [], 
-            file_captions: List[str | None] = [],
+            file_captions: List[str] = [],
             tags: Optional[List] = [],
             reply_to_id: Optional[str] = None, 
             who_can_reply: str | None = None,
