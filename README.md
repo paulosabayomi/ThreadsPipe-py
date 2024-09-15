@@ -791,6 +791,7 @@ str
 This command will generate both short and long lived access tokens with the authorization code.  
   
 | Arguments | Required | short form | Description |
+| --- | --- | --- | --- |
 | action  | `True` | *not applicable* | positional argument in which in this case is `access_token`, or simply the action you want to perform. |
 | --app_id | `True` | `-id` | The same app id you used when getting the authentication code from the Authentication Window. |
 | --app_secret | `True` | `-secret` | Your app secret, it can be gotten from the `Use cases > Customize > Settings` page in the Threads App secret input box in the app dashboard. |
@@ -805,6 +806,7 @@ This command will generate both short and long lived access tokens with the auth
 This command will refresh your long lived access token with a new and life-extended one.  
   
 | Arguments | Required | short form | Description |
+| --- | --- | --- | --- |
 | action | `True` | *not applicable* | positional argument in which in this case is `refresh_token`, or simply the action you want to perform. |
 --access_token | `True` if the `--auto_mode` argument is not set and `False` if not set | `-token` | If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token. |
 | --auto_mode | `False` | `-auto` | If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token. |
