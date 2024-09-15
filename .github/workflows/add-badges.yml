@@ -38,7 +38,7 @@ jobs:
               },
               {
                 "badge": "https://github.com/paulosabayomi/ThreadsPipe-py/actions/workflows/python-package.yml/badge.svg",
-                "alt": "Tests & lint for v3.8, to v3.11",
+                "alt": "Tests & lint for v3.8 - v3.11",
                 "link": "${{ env.repo_url }}/actions/workflows/python-package.yml"
               },
               {
