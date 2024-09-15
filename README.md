@@ -790,27 +790,27 @@ str
   
 This command will generate both short and long lived access tokens with the authorization code.  
   
-Arguments | Required | short form | Description |
-action  | `True` | *not applicable* | positional argument in which in this case is `access_token`, or simply the action you want to perform. |
---app_id | `True` | `-id` | The same app id you used when getting the authentication code from the Authentication Window. |
---app_secret | `True` | `-secret` | Your app secret, it can be gotten from the `Use cases > Customize > Settings` page in the Threads App secret input box in the app dashboard. |
---auth_code | `True` | `-code` | The authentication code that was gotten from the redirect url of the Authorization Window, Note this code can only be used once. |
---redirect_uri | `True` | `-r` | This redirect uri should be the same as the value of the `redirect_uri` argument passed to the `get_auth_token` method or the request will be rejected and the authorization token will be expired. |
---env_path | `False` | `-p` | This is optional, and it is useful and only required if you want ThreadsPipe to automatically update a variable in an .env file with the long lived token access token. |
---env_variable | `False` | `-v` | The name of the variable that ThreadsPipe should automatically update with the long lived access token. |
---silent | `False` | `-s` | Set this to 'true' if you want to disable logging. |  
+| Arguments | Required | short form | Description |
+| action  | `True` | *not applicable* | positional argument in which in this case is `access_token`, or simply the action you want to perform. |
+| --app_id | `True` | `-id` | The same app id you used when getting the authentication code from the Authentication Window. |
+| --app_secret | `True` | `-secret` | Your app secret, it can be gotten from the `Use cases > Customize > Settings` page in the Threads App secret input box in the app dashboard. |
+| --auth_code | `True` | `-code` | The authentication code that was gotten from the redirect url of the Authorization Window, Note this code can only be used once. |
+| --redirect_uri | `True` | `-r` | This redirect uri should be the same as the value of the `redirect_uri` argument passed to the `get_auth_token` method or the request will be rejected and the authorization token will be expired. |
+| --env_path | `False` | `-p` | This is optional, and it is useful and only required if you want ThreadsPipe to automatically update a variable in an .env file with the long lived token access token. |
+| --env_variable | `False` | `-v` | The name of the variable that ThreadsPipe should automatically update with the long lived access token. |
+| --silent | `False` | `-s` | Set this to 'true' if you want to disable logging. |  
   
 ### refresh_token command
   
 This command will refresh your long lived access token with a new and life-extended one.  
   
-Arguments | Required | short form | Description |
-action | `True` | *not applicable* | positional argument in which in this case is `refresh_token`, or simply the action you want to perform. |
+| Arguments | Required | short form | Description |
+| action | `True` | *not applicable* | positional argument in which in this case is `refresh_token`, or simply the action you want to perform. |
 --access_token | `True` if the `--auto_mode` argument is not set and `False` if not set | `-token` | If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token. |
---auto_mode | `False` | `-auto` | If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token. |
---env_path | `True` if the `--auto_mode` argument is set and `False` if not set | `-p` | Absolute or relative path to the `.env` file, this is optional, but it is required if `--auto_mode` is set to `true` and in that case the `--access_token` argument will be ignored and the value of the `--env_variable` in the provided `.env` (which is expected to be the long lived access token) file will be used to make the refresh token refresh and then will be updated with the new and life-extended long lived access token |
---env_variable | `True` if the `--auto_mode` argument is set and `False` if not set | `-v` | The name of the variable that ThreadsPipe should automatically update with the long lived access token. |
---silent | `False` | `-s` | Set this to 'true' if you want to disable logging. |
+| --auto_mode | `False` | `-auto` | If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token. |
+| --env_path | `True` if the `--auto_mode` argument is set and `False` if not set | `-p` | Absolute or relative path to the `.env` file, this is optional, but it is required if `--auto_mode` is set to `true` and in that case the `--access_token` argument will be ignored and the value of the `--env_variable` in the provided `.env` (which is expected to be the long lived access token) file will be used to make the refresh token refresh and then will be updated with the new and life-extended long lived access token |
+| --env_variable | `True` if the `--auto_mode` argument is set and `False` if not set | `-v` | The name of the variable that ThreadsPipe should automatically update with the long lived access token. |
+| --silent | `False` | `-s` | Set this to 'true' if you want to disable logging. |
   
 ## LICENSE
 
