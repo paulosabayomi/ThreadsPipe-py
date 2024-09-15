@@ -40,5 +40,10 @@ jobs:
                 "badge": "https://github.com/paulosabayomi/ThreadsPipe-py/actions/workflows/python-package.yml/badge.svg",
                 "alt": "Tests & lint for 3.8, 3.9, 3.10, 3.11",
                 "link": "${{ env.repo_url }}/actions/workflows/python-package.yml"
+              },
+              {
+                "badge": "https://github.com/paulosabayomi/ThreadsPipe-py/actions/workflows/python-publish.yml/badge.svg",
+                "alt": "Publish to Pypi",
+                "link": "${{ env.repo_url }}/actions/workflows/python-publish.yml"
               }
             ]

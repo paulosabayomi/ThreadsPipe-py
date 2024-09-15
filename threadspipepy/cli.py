@@ -126,75 +126,74 @@ def __refresh_token__(access_token: str, env_path: str = None, env_variable: str
 
         return refresh_token.json()
 
-def cli():
-    parser = argparse.ArgumentParser(
-        prog=Fore.BLUE + "ThreadsPipe CLI",
-        description=Fore.GREEN + "ThreadsPipe CLI tool to get short and long lived access tokens and to refresh long lived access tokens" + Style.RESET_ALL
-    )
+parser = argparse.ArgumentParser(
+    prog=Fore.BLUE + "ThreadsPipe CLI",
+    description=Fore.GREEN + "ThreadsPipe CLI tool to get short and long lived access tokens and to refresh long lived access tokens" + Style.RESET_ALL
+)
 
-    # get access token args
-    parser.add_argument("action", help=Fore.CYAN + f"The action you want to perform: `{Fore.MAGENTA + 'access_token' + Fore.CYAN}` (to get short and long lived access tokens) or `{Fore.MAGENTA + 'refresh_token' + Fore.CYAN}` (to refresh the long lived access token)" + Style.RESET_ALL)
-    parser.add_argument("-id", "--app_id", required=len(sys.argv) > 1 and sys.argv[1] == 'access_token', help=Fore.GREEN + "The same app id you used when getting the authentication code from the Authentication Window." + Style.RESET_ALL)
-    parser.add_argument("-secret", "--app_secret", required=len(sys.argv) > 1 and sys.argv[1] == 'access_token', help=Fore.GREEN + "Your app secret, it can be gotten from the `Use cases > Customize > Settings` page in the Threads App secret input box, \
-            in the app dashboard." + Style.RESET_ALL)
-    parser.add_argument("-code", "--auth_code", required=len(sys.argv) > 1 and sys.argv[1] == 'access_token', help=Fore.GREEN + "The authentication code that was gotten from the redirect url of the Authorization Window, \
-            Note this code can only be used once." + Style.RESET_ALL)
-    parser.add_argument("-r", "--redirect_uri", required=len(sys.argv) > 1 and sys.argv[1] == 'access_token', help=Fore.GREEN + "This redirect uri should be the same as the value of the `redirect_uri` argument passed to the `get_auth_token` \
-            method or the request will be rejected and the authorization token will be expired." + Style.RESET_ALL)
+# get access token args
+parser.add_argument("action", help=Fore.CYAN + f"The action you want to perform: `{Fore.MAGENTA + 'access_token' + Fore.CYAN}` (to get short and long lived access tokens) or `{Fore.MAGENTA + 'refresh_token' + Fore.CYAN}` (to refresh the long lived access token)" + Style.RESET_ALL)
+parser.add_argument("-id", "--app_id", required=len(sys.argv) > 1 and sys.argv[1] == 'access_token', help=Fore.GREEN + "The same app id you used when getting the authentication code from the Authentication Window." + Style.RESET_ALL)
+parser.add_argument("-secret", "--app_secret", required=len(sys.argv) > 1 and sys.argv[1] == 'access_token', help=Fore.GREEN + "Your app secret, it can be gotten from the `Use cases > Customize > Settings` page in the Threads App secret input box, \
+        in the app dashboard." + Style.RESET_ALL)
+parser.add_argument("-code", "--auth_code", required=len(sys.argv) > 1 and sys.argv[1] == 'access_token', help=Fore.GREEN + "The authentication code that was gotten from the redirect url of the Authorization Window, \
+        Note this code can only be used once." + Style.RESET_ALL)
+parser.add_argument("-r", "--redirect_uri", required=len(sys.argv) > 1 and sys.argv[1] == 'access_token', help=Fore.GREEN + "This redirect uri should be the same as the value of the `redirect_uri` argument passed to the `get_auth_token` \
+        method or the request will be rejected and the authorization token will be expired." + Style.RESET_ALL)
 
-    # refresh token args
-    check_for_auto_mode = re.compile(r"\-auto|\-\-auto_mode").search(" ".join(sys.argv))
-    parser.add_argument('-token', '--access_token', required=False if check_for_auto_mode != None or len(sys.argv) > 1 and sys.argv[1] == 'access_token' else True, help=Fore.GREEN + "The long lived access token that will be refreshed for a new and life-extended one." + Style.RESET_ALL)
-    parser.add_argument('-auto', '--auto_mode', required=False, help=Fore.GREEN + "If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option \
-                        (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token" + Style.RESET_ALL)
+# refresh token args
+check_for_auto_mode = re.compile(r"\-auto|\-\-auto_mode").search(" ".join(sys.argv))
+parser.add_argument('-token', '--access_token', required=False if check_for_auto_mode != None or len(sys.argv) > 1 and sys.argv[1] == 'access_token' else True, help=Fore.GREEN + "The long lived access token that will be refreshed for a new and life-extended one." + Style.RESET_ALL)
+parser.add_argument('-auto', '--auto_mode', required=False, help=Fore.GREEN + "If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option \
+                    (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token" + Style.RESET_ALL)
 
-    # general args
-    parser.add_argument('-p', '--env_path', required=False if check_for_auto_mode == None else True, help=Fore.GREEN + "This is optional, and it is useful and only required if you want ThreadsPipe to automatically update a variable \
-            in an .env file with the long lived token access token." + Style.RESET_ALL)
-    parser.add_argument('-v', '--env_variable', required=False if check_for_auto_mode == None else True, help=Fore.GREEN + "The name of the variable that ThreadsPipe should automatically update with the \
-            long lived access token." + Style.RESET_ALL)
+# general args
+parser.add_argument('-p', '--env_path', required=False if check_for_auto_mode == None else True, help=Fore.GREEN + "This is optional, and it is useful and only required if you want ThreadsPipe to automatically update a variable \
+        in an .env file with the long lived token access token." + Style.RESET_ALL)
+parser.add_argument('-v', '--env_variable', required=False if check_for_auto_mode == None else True, help=Fore.GREEN + "The name of the variable that ThreadsPipe should automatically update with the \
+        long lived access token." + Style.RESET_ALL)
+
+parser.add_argument('-s', '--silent', required=False, help=Fore.GREEN + "Set this to 'true' if you want to disable logging" + Style.RESET_ALL)
+
+if len(sys.argv) > 1:
+
+    args = parser.parse_args()
+
+    if args.silent == 'true':
+        logging.disable()
+
+    if args.action not in ['access_token', 'refresh_token']:
+        logging.error("Not implemented!")
+        sys.exit()
+
+    if args.action == 'access_token':
+        if args.env_path is not None and args.env_variable is None:
+            logging.error("You must provide the env variable")
+
+        if args.env_variable is not None and args.env_path is None:
+            logging.error("You must provide the path to the .env")
+
+        __get_access_token__(
+            app_id=args.app_id, 
+            app_secret=args.app_secret, 
+            auth_code=args.auth_code, 
+            redirect_uri=args.redirect_uri,
+            env_path=args.env_path, 
+            env_variable=args.env_variable
+        )
     
-    parser.add_argument('-s', '--silent', required=False, help=Fore.GREEN + "Set this to 'true' if you want to disable logging" + Style.RESET_ALL)
+    if args.action == 'refresh_token':
+        if args.env_path is not None and args.env_variable is None:
+            logging.error("You must provide the env variable")
 
-    if len(sys.argv) > 1:
-    
-        args = parser.parse_args()
+        if args.env_variable is not None and args.env_path is None:
+            logging.error("You must provide the path to the .env")
 
-        if args.silent == 'true':
-            logging.disable()
-
-        if args.action not in ['access_token', 'refresh_token']:
-            logging.error("Not implemented!")
-            sys.exit()
-
-        if args.action == 'access_token':
-            if args.env_path is not None and args.env_variable is None:
-                logging.error("You must provide the env variable")
-
-            if args.env_variable is not None and args.env_path is None:
-                logging.error("You must provide the path to the .env")
-
-            __get_access_token__(
-                app_id=args.app_id, 
-                app_secret=args.app_secret, 
-                auth_code=args.auth_code, 
-                redirect_uri=args.redirect_uri,
-                env_path=args.env_path, 
-                env_variable=args.env_variable
-            )
-        
-        if args.action == 'refresh_token':
-            if args.env_path is not None and args.env_variable is None:
-                logging.error("You must provide the env variable")
-
-            if args.env_variable is not None and args.env_path is None:
-                logging.error("You must provide the path to the .env")
-
-            __refresh_token__(
-                access_token=args.access_token, 
-                env_path=args.env_path, 
-                env_variable=args.env_variable,
-                auto_mode=args.auto_mode != None
-            )
-    else:
-        parser.print_help()
+        __refresh_token__(
+            access_token=args.access_token, 
+            env_path=args.env_path, 
+            env_variable=args.env_variable,
+            auto_mode=args.auto_mode != None
+        )
+else:
+    parser.print_help()
