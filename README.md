@@ -158,7 +158,7 @@ api.update_param(
 
 With the ThreadsPipe CLI you can get access tokens (short and long lived) and you can also refresh the long lived access token before it expires. To use the CLI you can install ThreadsPipe with the `pip install threadspipepy[cli]` command and it will either only install the dependencies requires for the CLI if you already have ThreadsPipe installed or install the CLI dependencies along with the ThreadsPipe installation.  
   
-#### To generate short and long lived access tokens
+#### To generate short and long lived access tokens on the CLI
 
 To generated short and long lived access tokens, I will assume you have already gotten the authorization code, if yes then the command is as follows:
 
@@ -166,9 +166,9 @@ To generated short and long lived access tokens, I will assume you have already 
 threadspipepy access_token --app_id=your-app-id --auth_code="the-auth-code" --app_secret="your-app-secret" --redirect_uri='https://redirect-uri.com/redirect' --env_path="./.env" --env_variable=long_lived_token_variable
 ```
 
-The command will generate access tokens by swapping the authorization code for both short and long lived access tokens, all the optional arguments are required and only the `--env_path` and `--env_variable` arguments are optional, set both the `--env_path` and `--env_variable` arguments if you want to automatically update an environment variable with the generated long lived access token, more details below.  
+The command will generate access tokens by swapping the authorization code for both short and long lived access tokens and this can also be achieved by calling the `ThreadsPipe.get_access_tokens` method, all the optional arguments are required and only the `--env_path` and `--env_variable` arguments are optional, set both the `--env_path` and `--env_variable` arguments if you want to automatically update an environment variable with the generated long lived access token, more details below.  
   
-#### To refresh long lived access token
+#### To refresh long lived access token on the CLI
   
 Only long lived access token can be refreshed, short lived access token can not be refreshed after it has expired, long lived access token expires after 60 days and you can refresh them after they are at least 24 hours old, so to refresh the long lived token with the ThreadsPipe CLI, this can also be done with the `refresh_token` method, run the commands below:
 
@@ -801,7 +801,7 @@ This command will refresh your long lived access token with a new and life-exten
   
 | Arguments | Required | short form | Description |
 | --- | --- | --- | --- |
-| refresh_token | `True` | *not applicable* | The positional argument to refresh the long lived access token for a new and life-extended one. |
+| refresh_token | `True` | *not applicable* | The positional argument to refresh the long lived access token and returns a new and life-extended one. |
 --access_token | `True` if the `--auto_mode` argument is not set and `False` if not set | `-token` | If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token. |
 | --auto_mode | `False` | `-auto` | If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token. |
 | --env_path | `True` if the `--auto_mode` argument is set and `False` if not set | `-p` | Absolute or relative path to the `.env` file, this is optional, but it is required if `--auto_mode` is set to `true` and in that case the `--access_token` argument will be ignored and the value of the `--env_variable` in the provided `.env` (which is expected to be the long lived access token) file will be used to make the refresh token refresh and then will be updated with the new and life-extended long lived access token |

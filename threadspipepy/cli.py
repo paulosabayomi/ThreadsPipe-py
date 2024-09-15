@@ -12,10 +12,10 @@ logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - 
 
 def __get_access_token__(app_id: str, app_secret: str, auth_code: str, redirect_uri: str, env_path: str = None, env_variable: str = None):
         """
-            ## ThreadsPipe.get_access_token
+            ## Function __get_access_token__
 
             ### Description
-            This method swaps the access token gotten from Authorization Window for short and long lived access token.
+            This function swaps the access token gotten from Authorization Window for short and long lived access token.
 
             ### Parameters
 
@@ -87,10 +87,10 @@ def __get_access_token__(app_id: str, app_secret: str, auth_code: str, redirect_
 
 def __refresh_token__(access_token: str, env_path: str = None, env_variable: str = None, auto_mode:bool = None):
         """
-            ## ThreadsPipe.refresh_token
+            ## Function __refresh_token__
 
             ### Description
-            Use this method to refresh unexpired long lived access tokens before they expire, long \
+            This function refreshes unexpired long lived access tokens and returns a new and life-extended one, long \
             lived access tokens expire after 60 days, and you can only refresh long lived token and \
             anytime after it is at least 24 hours old.
 
@@ -124,7 +124,7 @@ def __refresh_token__(access_token: str, env_path: str = None, env_variable: str
             set_key(env_path, env_variable, refresh_token.json()['access_token'])
             logging.info(f"Updated the {env_variable} variable in the .env file")
 
-        return refresh_token.json()
+        pprint.pp(refresh_token.json())
 
 def run():
     parser = argparse.ArgumentParser(
@@ -167,13 +167,15 @@ def run():
             logging.error("Not implemented!")
             sys.exit()
 
+        if args.env_path is not None and args.env_variable is None:
+            logging.error("You must also provide the env variable")
+            sys.exit()
+
+        if args.env_variable is not None and args.env_path is None:
+            logging.error("You must also provide the path to the .env file")
+            sys.exit()
+
         if args.action == 'access_token':
-            if args.env_path is not None and args.env_variable is None:
-                logging.error("You must provide the env variable")
-
-            if args.env_variable is not None and args.env_path is None:
-                logging.error("You must provide the path to the .env")
-
             __get_access_token__(
                 app_id=args.app_id, 
                 app_secret=args.app_secret, 
@@ -184,12 +186,6 @@ def run():
             )
         
         if args.action == 'refresh_token':
-            if args.env_path is not None and args.env_variable is None:
-                logging.error("You must provide the env variable")
-
-            if args.env_variable is not None and args.env_path is None:
-                logging.error("You must provide the path to the .env")
-
             __refresh_token__(
                 access_token=args.access_token, 
                 env_path=args.env_path, 
