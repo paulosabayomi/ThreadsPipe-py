@@ -13,7 +13,7 @@ jobs:
           repo_name: ${{ github.event.repository.name }}
           repo_owner: ${{ github.event.repository.owner.login }}
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           badges: |
             [
               {
@@ -37,7 +37,7 @@ jobs:
                 "link": "https://github.com/marketplace/actions/${{ env.repo_name }}"
               },
               {
-                "badge": "https://img.shields.io/github/workflow/status/${{ env.repo_owner }}/${{ env.repo_name }}/Release/master?logo=github&style=flat-square",
+                "badge": "[![Tests & lint for 3.8, 3.9, 3.10 & 3.11](https://github.com/paulosabayomi/ThreadsPipe-py/actions/workflows/python-package.yml/badge.svg)](https://github.com/paulosabayomi/ThreadsPipe-py/actions/workflows/python-package.yml)",
                 "alt": "Tests",
                 "link": "${{ env.repo_url }}/actions/workflows/python-package.yml"
               }
