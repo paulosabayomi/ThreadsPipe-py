@@ -1,6 +1,6 @@
 [project]
 name = "threadspipepy"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="Abayomi Amusa", email="amusapaulos99@gmail.com" },
 ]
@@ -31,10 +31,10 @@ Homepage = "https://github.com/paulosabayomi/ThreadsPipe-py"
 Issues = "https://github.com/paulosabayomi/ThreadsPipe-py/issues"
 
 [project.scripts]
-threadspipepy = "threadspipepy:cli"
+threadspipepy = "threadspipepy.cli:run"
 
 [project.gui-scripts]
-threadspipepy = "threadspipepy:cli"
+threadspipepy = "threadspipepy.cli:run"
 
 [build-system]
 requires = ["hatchling"]
