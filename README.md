@@ -11,7 +11,7 @@
 <!-- [END BADGES] -->
 
 threadspipepy Python library uses the official Meta's Threads API to perform actions on a user's account, actions like create post, respond to posts and replies, get posts and user's account insights and many more.
-
+  
 ## Instalation
   
 Installation requires at least Python 3.8  
@@ -172,7 +172,7 @@ To generated short and long lived access tokens, I will assume you have already 
 threadspipepy access_token --app_id=your-app-id --auth_code="the-auth-code" --app_secret="your-app-secret" --redirect_uri='https://redirect-uri.com/redirect' --env_path="./.env" --env_variable=long_lived_token_variable
 ```
 
-The command will generate access tokens by swapping the authentication code for both short and long lived access tokens, all the optional arguments are required and only the `--env_path` and `--env_variable` arguments are optional, set both the `--env_path` and `--env_variable` arguments if you want to automatically update an environment variable with the generated long lived access token, more details below.  
+The command will generate access tokens by swapping the authorization code for both short and long lived access tokens, all the optional arguments are required and only the `--env_path` and `--env_variable` arguments are optional, set both the `--env_path` and `--env_variable` arguments if you want to automatically update an environment variable with the generated long lived access token, more details below.  
   
 #### To refresh long lived access token
   
@@ -302,38 +302,38 @@ api = ThreadsPipe(
   
 - Parameters  
   
-user_id: `int`  The user_id of the Threads account, which is part of the data returned when you call the `get_access_tokens` method.  
+*user_id*: `int`  The user_id of the Threads account, which is part of the data returned when you call the `get_access_tokens` method.  
   
-access_token: `str` The user's account access token, either the short or long lived access token can be used, but the long lived access token is recommended, the short and long lived access token are part of the data returned when you call the `get_access_tokens` method.  
+*access_token*: `str` The user's account access token, either the short or long lived access token can be used, but the long lived access token is recommended, the short and long lived access token are part of the data returned when you call the `get_access_tokens` method.  
   
-disable_logging - `bool | False` By default ThreadsPipe displays logs using the python's `logging` module, if you want to disable logging set this to `False`  
+*disable_logging* - `bool | False` By default ThreadsPipe displays logs using the python's `logging` module, if you want to disable logging set this to `False`  
   
-wait_before_post_publish: `bool | True` It is recommended to wait for the status of media items (or uploaded files) or media containers (post blueprints) to be 'FINISHED' before publishing a Threads media container, the average wait time is 30 seconds and trying to publish a media item/file, and media container / post before it has finished processing could cause the publishing of the media container/post to fail, it is recommended to leave this parameter to `True`.  
+*wait_before_post_publish*: `bool | True` It is recommended to wait for the status of media items (or uploaded files) or media containers (post blueprints) to be 'FINISHED' before publishing a Threads media container, the average wait time is 30 seconds and trying to publish a media item/file, and media container / post before it has finished processing could cause the publishing of the media container/post to fail, it is recommended to leave this parameter to `True`.  
   
-post_publish_wait_time: `int | 35` The time to wait for a media container or post in seconds to finish processing before publishing it.  
+*post_publish_wait_time*: `int | 35` The time to wait for a media container or post in seconds to finish processing before publishing it.  
 **Note:** it must not be less than 30 seconds and it is recommended not to be less than 31 seconds.  
   
-wait_before_media_item_publish: `bool | True` Media item (AKA uploaded files), just like media containers/posts, it is also recommended to wait for media items or uploaded files to finish processing before publishing the media container or post it is attached to.  
+*wait_before_media_item_publish*: `bool | True` Media item (AKA uploaded files), just like media containers/posts, it is also recommended to wait for media items or uploaded files to finish processing before publishing the media container or post it is attached to.  
   
-media_item_publish_wait_time: `int | 35` The time to wait for a media item/uploaded files to finish processing, different media item types have different processing time and image files with small file sizes are always processed quickly than ones with larger file sizes and video files.  
+*media_item_publish_wait_time*: `int | 35` The time to wait for a media item/uploaded files to finish processing, different media item types have different processing time and image files with small file sizes are always processed quickly than ones with larger file sizes and video files.  
   
-handle_hashtags: `bool | True` ThreadsPipe automatically handle hastags that are added to the end of a post, because only one hashtag is allowed in a threads post, so the tags are extracted and splitted and added to each of the chained posts, To not automatically handle hashtags set this to `False` if the text in the post is longer than the maximum character allowed by threads for a post or the provided files are more than the maximum allowed the post will be splitted and chained to the root post which is going to be like a thread post on X. The body of the post might already have an hashtag to make it more dynamic set the `auto_handle_hashtags` to `True`, when `auto_handle_hashtags` is `True` the post body that already has an hashtag will be skipped and no hashtag will be added to it.  
+*handle_hashtags*: `bool | True` ThreadsPipe automatically handle hastags that are added to the end of a post, because only one hashtag is allowed in a threads post, so the tags are extracted and splitted and added to each of the chained posts, To not automatically handle hashtags set this to `False` if the text in the post is longer than the maximum character allowed by threads for a post or the provided files are more than the maximum allowed the post will be splitted and chained to the root post which is going to be like a thread post on X. The body of the post might already have an hashtag to make it more dynamic set the `auto_handle_hashtags` to `True`, when `auto_handle_hashtags` is `True` the post body that already has an hashtag will be skipped and no hashtag will be added to it.  
   
-auto_handle_hashtags: `bool | False` When this is `True` it will more intelligently (that what the `handle_hashtags` option does) and automatically handle hashtags, in cases where there are many hashtags at the end of a posts, the hashtags will be extracted and distributed intelligently between the chained posts, posts that already have an hashtag within the body of the post will not be given an hashtag.  
+*auto_handle_hashtags*: `bool | False` When this is `True` it will more intelligently (that what the `handle_hashtags` option does) and automatically handle hashtags, in cases where there are many hashtags at the end of a posts, the hashtags will be extracted and distributed intelligently between the chained posts, posts that already have an hashtag within the body of the post will not be given an hashtag.  
   
-gh_bearer_token: `str | None` Your GitHub fine-grained token, which can be gotten from [https://github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta), Because to upload files to the Threads API, only the url to the files are allowed and the files must be on a public server, and this is going to be challenging when uploading files available locally on your computer or local files on a server that are not exposed to the public, that's why ThreadsPipe will first of all upload the local files in the provided files to GitHub and then delete them after the files are uploaded to Threads or if an error occured while trying to publish the post.  
+*gh_bearer_token*: `str | None` Your GitHub fine-grained token, which can be gotten from [https://github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta), Because to upload files to the Threads API, only the url to the files are allowed and the files must be on a public server, and this is going to be challenging when uploading files available locally on your computer or local files on a server that are not exposed to the public, that's why ThreadsPipe will first of all upload the local files in the provided files to GitHub and then delete them after the files are uploaded to Threads or if an error occured while trying to publish the post.  
   
-gh_api_version: `str | '2022-11-28'` The GitHub API version.  
+*gh_api_version*: `str | '2022-11-28'` The GitHub API version.  
   
-gh_repo_name: `str | None` The name of the repository that should be used for the temporary storage of the local files.  
+*gh_repo_name*: `str | None` The name of the repository that should be used for the temporary storage of the local files.  
   
-gh_username: `str | None` Your GitHub username.  
+*gh_username*: `str | None` Your GitHub username.  
   
-gh_upload_timeout: `int` The upload timeout of the local files to GitHub, the default is `60 * 5` (5 minutes), but you can either reduce it or increase it.  
+*gh_upload_timeout*: `int` The upload timeout of the local files to GitHub, the default is `60 * 5` (5 minutes), but you can either reduce it or increase it.  
   
-wait_on_rate_limit: `bool | False` Whether ThreadsPipe should wait when rate limit is hit instead of rejecting the request, this can have an impact on the memory on your server in scenarios where multiple requests are made and will spawn multiple waiting processes.  
+*wait_on_rate_limit*: `bool | False` Whether ThreadsPipe should wait when rate limit is hit instead of rejecting the request, this can have an impact on the memory on your server in scenarios where multiple requests are made and will spawn multiple waiting processes.  
   
-check_rate_limit_before_post: `bool | True` By default ThreadsPipe checks rate limit everytime before proceeding to post, if you don't want it to perform the check you can set it to `False`.  
+*check_rate_limit_before_post*: `bool | True` By default ThreadsPipe checks rate limit everytime before proceeding to post, if you don't want it to perform the check you can set it to `False`.  
   
 ### ThreadsPipe.pipe
   
@@ -447,7 +447,7 @@ api.get_auth_token(
 **Parameters**  
 *app_id*: `str` Your Threads app id which can be found on the `Use cases > Customize > Settings` page.  
   
-*redirect_uri*: `str` The uri that the Threads API will redirect the user to after granting or rejecting the permission request, you can provide one of the redirect uri that you listed in the Redirect Callback URLs input box, the user will be redirected to this url after the action with a `code` query parameter containing authentication token which can be used to get short and long lived access tokens. The resulting url after redirection will look like `https://example.com/api.php?code=dnsdbcbdkvv...#_` and notice the `#_` at the end of the token which is not part of the token and should be stripped off, **Note:** The authentication token can only be used once, see `get_access_tokens` method to learn more.  
+*redirect_uri*: `str` The uri that the Threads API will redirect the user to after granting or rejecting the permission request, you can provide one of the redirect uri that you listed in the Redirect Callback URLs input box, the user will be redirected to this url after the action with a `code` query parameter containing authorization token which can be used to get short and long lived access tokens. The resulting url after redirection will look like `https://example.com/api.php?code=dnsdbcbdkvv...#_` and notice the `#_` at the end of the token which is not part of the token and should be stripped off, **Note:** The authorization token can only be used once, see `get_access_tokens` method to learn more.  
   
 *scope*: `str | List[str]` The scope is the Threads permissions that are enabled for the app, you can leave the value of this parameter as `all` or provide the list of comma separated string or `List` of the enabled permissions, the values should be from one of ThreadsPipe library threads-auth-scopes, which you can get by calling `ThreadsPipe.__threads_auth_scope__`, the returned dict's keys will be `basic`, `publish`, `read_replies`, `manage_replies`, `insights`.  
   
@@ -513,11 +513,11 @@ api.get_access_tokens(
   
 **Parameters**  
   
-*app_id*: `str` The same app id you used when getting the authentication code from the Authentication Window.  
+*app_id*: `str` The same app id you used when getting the authorization code from the authorization Window.  
   
 *app_secret*: `str` This can be gotten from the `Use cases > Customize > Settings` page in the Threads App secret input box, in the app dashboard.  
   
-*auth_code*: `str` The authentication code that was gotten from the redirect url of the Authorization Window, Note this code can only be used once.  
+*auth_code*: `str` The authorization code that was gotten from the redirect url of the Authorization Window, Note this code can only be used once.  
   
 *redirect_uri*: `str` This redirect uri should be the same as the value of the `redirect_uri` argument passed to the `get_auth_token` method or the request will be rejected and the authorization token will be expired.  
   
@@ -792,10 +792,10 @@ This command will generate both short and long lived access tokens with the auth
   
 | Arguments | Required | short form | Description |
 | --- | --- | --- | --- |
-| action  | `True` | *not applicable* | positional argument in which in this case is `access_token`, or simply the action you want to perform. |
-| --app_id | `True` | `-id` | The same app id you used when getting the authentication code from the Authentication Window. |
+| access_token  | `True` | *not applicable* | The positional argument to generate short and long lived access tokens from the authorization code |
+| --app_id | `True` | `-id` | The same app id you used when getting the authorization code from the authorization Window. |
 | --app_secret | `True` | `-secret` | Your app secret, it can be gotten from the `Use cases > Customize > Settings` page in the Threads App secret input box in the app dashboard. |
-| --auth_code | `True` | `-code` | The authentication code that was gotten from the redirect url of the Authorization Window, Note this code can only be used once. |
+| --auth_code | `True` | `-code` | The authorization code that was gotten from the redirect url of the Authorization Window, Note this code can only be used once. |
 | --redirect_uri | `True` | `-r` | This redirect uri should be the same as the value of the `redirect_uri` argument passed to the `get_auth_token` method or the request will be rejected and the authorization token will be expired. |
 | --env_path | `False` | `-p` | This is optional, and it is useful and only required if you want ThreadsPipe to automatically update a variable in an .env file with the long lived token access token. |
 | --env_variable | `False` | `-v` | The name of the variable that ThreadsPipe should automatically update with the long lived access token. |
@@ -807,12 +807,16 @@ This command will refresh your long lived access token with a new and life-exten
   
 | Arguments | Required | short form | Description |
 | --- | --- | --- | --- |
-| action | `True` | *not applicable* | positional argument in which in this case is `refresh_token`, or simply the action you want to perform. |
+| refresh_token | `True` | *not applicable* | The positional argument to refresh the long lived access token for a new and life-extended one. |
 --access_token | `True` if the `--auto_mode` argument is not set and `False` if not set | `-token` | If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token. |
 | --auto_mode | `False` | `-auto` | If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token. |
 | --env_path | `True` if the `--auto_mode` argument is set and `False` if not set | `-p` | Absolute or relative path to the `.env` file, this is optional, but it is required if `--auto_mode` is set to `true` and in that case the `--access_token` argument will be ignored and the value of the `--env_variable` in the provided `.env` (which is expected to be the long lived access token) file will be used to make the refresh token refresh and then will be updated with the new and life-extended long lived access token |
 | --env_variable | `True` if the `--auto_mode` argument is set and `False` if not set | `-v` | The name of the variable that ThreadsPipe should automatically update with the long lived access token. |
 | --silent | `False` | `-s` | Set this to 'true' if you want to disable logging. |
+  
+## Inspiration
+  
+I got the idea when working on my Space bot which is called 'Astronomy Bot' on Threads, @astronomybot, when I faced issues like not able to post local media files to Threads and having to truncate the texts in posts to the 500-character limit which affects many posts, and then I searched for a library for Threads and that uses the official API but couldn't find and I decided to create ThreadsPipe.
   
 ## LICENSE
 
