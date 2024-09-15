@@ -1,3 +1,5 @@
+# ThreadsPipePy
+
 <!-- [START BADGES] -->
 <!-- Please keep comment here to allow auto update -->
 [![MIT License](https://img.shields.io/github/license/paulosabayomi/ThreadsPipe-py?style=flat-square)](https://github.com/paulosabayomi/ThreadsPipe-py/blob/main/LICENSE)
@@ -7,7 +9,6 @@
 [![Tests & lint for 3.8, 3.9, 3.10, 3.11](https://github.com/paulosabayomi/ThreadsPipe-py/actions/workflows/python-package.yml/badge.svg)](https://github.com/paulosabayomi/ThreadsPipe-py/actions/workflows/python-package.yml)
 [![Publish to Pypi](https://github.com/paulosabayomi/ThreadsPipe-py/actions/workflows/python-publish.yml/badge.svg)](https://github.com/paulosabayomi/ThreadsPipe-py/actions/workflows/python-publish.yml)
 <!-- [END BADGES] -->
-# ThreadsPipePy
 
 threadspipepy Python library uses the official Meta's Threads API to perform actions on a user's account, actions like create post, respond to posts and replies, get posts and user's account insights and many more.
 
