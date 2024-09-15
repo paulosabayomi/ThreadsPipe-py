@@ -37,8 +37,8 @@ jobs:
                 "link": "https://github.com/marketplace/actions/${{ env.repo_name }}"
               },
               {
-                "badge": "[![Tests & lint for 3.8, 3.9, 3.10 & 3.11](https://github.com/paulosabayomi/ThreadsPipe-py/actions/workflows/python-package.yml/badge.svg)]",
-                "alt": "Tests",
+                "badge": "https://github.com/paulosabayomi/ThreadsPipe-py/actions/workflows/python-package.yml/badge.svg",
+                "alt": "Tests & lint for 3.8, 3.9, 3.10, 3.11",
                 "link": "${{ env.repo_url }}/actions/workflows/python-package.yml"
               }
             ]
