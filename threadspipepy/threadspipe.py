@@ -307,7 +307,7 @@ class ThreadsPipe:
             chained_post = True, 
             persist_tags_multipost = False,
             allowed_country_codes: Union[str, List[str]] = None,
-            link_attachments: List[str] = None,
+            link_attachments: List[str] = [],
         ):
 
         """
