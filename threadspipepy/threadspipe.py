@@ -1379,7 +1379,7 @@ class ThreadsPipe:
 
             if req_upload_file.status_code > 201:
                 self.__delete_uploaded_files__(files=self.__handled_media__)
-                logging.error(f"An unknown error occured while trying to upload local file at index {file_index} to GitHub, error: {e}")
+                logging.error(f"An unknown error occured while trying to upload local file at index {file_index} to GitHub")
                 return self.__tp_response_msg__(
                     message=f"An unknown error occured while trying to upload local file at index {file_index} to GitHub", 
                     body={'e': e},

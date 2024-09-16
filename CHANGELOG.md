@@ -1,5 +1,11 @@
 # Changelog
 
+## [Version 0.1.1] - 2024-09-16
+
+### Fix
+
+- A bug in the send_post method
+
 ## [Version 0.1.0] - 2024-09-16
 
 ### Added
