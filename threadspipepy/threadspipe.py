@@ -1382,7 +1382,7 @@ class ThreadsPipe:
                 logging.error(f"An unknown error occured while trying to upload local file at index {file_index} to GitHub")
                 return self.__tp_response_msg__(
                     message=f"An unknown error occured while trying to upload local file at index {file_index} to GitHub", 
-                    body={'e': e},
+                    body=req_upload_file.json(),
                     response=req_upload_file,
                     is_error=True
                 )
