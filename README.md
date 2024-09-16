@@ -406,6 +406,8 @@ api.pipe(
   
 *allowed_country_codes*: `List[str] | []` This requires the user to have the geo-gating permission, if you want to restrict the post to a country or a set of countries, provide the list of allowed country codes to this parameter, the format should be either a comma separated country codes i.e. "US,CA,NG" or a `List` of the allowed country codes i.e. ["US","CA","NG"], you can check if you have the permission to use the geo-gating feature by calling the `ThreadsPipe.is_eligible_for_geo_gating`.  
   
+*link_attachments*: `List[str] | None` Use this to explicitly provide link(s) for the post, this will only work for text-only posts, if the number of links are more than 1 and the post was splitted into a chained post, see the `pipe` method's `post` parameter doc for more info on chained posts, then in this case because only one link is allowed per post the links will be shared among the chained posts.  
+  
 *Returns*  
 dict | requests.Response | Response
   

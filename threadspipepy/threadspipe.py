@@ -307,6 +307,7 @@ class ThreadsPipe:
             chained_post = True, 
             persist_tags_multipost = False,
             allowed_country_codes: Union[str, List[str]] = None,
+            link_attachments: List[str] = None,
         ):
 
         """
@@ -411,6 +412,12 @@ class ThreadsPipe:
             i.e. "US,CA,NG" or a `List` of the allowed country codes i.e. ["US","CA","NG"], \
             you can check if you have the permission to use the geo-gating feature by calling the `ThreadsPipe.is_eligible_for_geo_gating`
 
+            link_attachments: `List[str] | None` \
+            Use this to explicitly provide link(s) for the post, this will only work for text-only posts, if the number of links are more than 1 and \
+            the post was splitted into a chained post, see the `pipe` method's `post` parameter doc for more info on chained posts, \
+            then in this case because only one link is allowed per post the links will be shared among the \
+            chained posts.  
+
             ### Returns
             dict | requests.Response | Response
         """
@@ -457,7 +464,7 @@ class ThreadsPipe:
         allowed_country_codes = allowed_country_codes if type(allowed_country_codes) is str else None if allowed_country_codes is None else ",".join(allowed_country_codes)
 
         media_ids = []
-        prev_post_chain_id = reply_to_id
+        prev_post_chain_id = None if reply_to_id is None else {'id': reply_to_id}
         for s_post in splitted_post:
             prev_post_chain_id = self.__send_post__(
                 s_post, 
@@ -465,7 +472,8 @@ class ThreadsPipe:
                 media_captions=[] if splitted_post.index(s_post) >= len(splitted_captions) else splitted_captions[splitted_post.index(s_post)],
                 reply_to_id=None if prev_post_chain_id is None else prev_post_chain_id['id'],
                 allowed_listed_country_codes=allowed_country_codes,
-                who_can_reply=who_can_reply
+                who_can_reply=who_can_reply,
+                attached_link=link_attachments[splitted_post.index(s_post)] if splitted_post.index(s_post) < len(link_attachments) else None
             )
             if 'error' in prev_post_chain_id:
                 return prev_post_chain_id
@@ -488,10 +496,11 @@ class ThreadsPipe:
                     media_ids.append(prev_post_chain_id['id'])
 
         self.__delete_uploaded_files__(files=files)
-        logging.info("All posts piped to Instagram Threads successfully!")
+        logging.info("Post piped to Instagram Threads successfully!")
         return self.__tp_response_msg__(
-            message='All posts piped to Instagram Threads successfully!',
+            message='Post piped to Instagram Threads successfully!',
             is_error=False,
+            response=prev_post_chain_id['publish_post'],
             body={'media_ids': media_ids}
         )
 
@@ -686,6 +695,7 @@ class ThreadsPipe:
             return self.__tp_response_msg__(
                 message="Could not get geogating eligibility from Threads",
                 body=send_request.json(),
+                response=send_request,
                 is_error=True
             )
         return send_request.json()
@@ -985,7 +995,8 @@ class ThreadsPipe:
             media_captions: List[Union[str, None]] = [],
             reply_to_id: Optional[str] = None,
             allowed_listed_country_codes: Union[str, None] = None,
-            who_can_reply: Union[str, None] = None
+            who_can_reply: Union[str, None] = None,
+            attached_link: str | None = None
         ):
         """
             ### ThreadsPipe.__send_post__
@@ -1011,7 +1022,7 @@ class ThreadsPipe:
                     logging.error("Rate limit exceeded!")
                     return self.__tp_response_msg__(
                         message='Rate limit exceeded!', 
-                        body=quota,
+                        body=quota | {'status_code': 429},
                         is_error=True
                     )
                 
@@ -1035,25 +1046,27 @@ class ThreadsPipe:
                     return self.__tp_response_msg__(
                         message=f"An error occured while creating an item container or a uploading media file at index {media_cont.index(media)}", 
                         body=req_post.json(),
+                        response=req_post,
                         is_error=True
                     )
 
                 logging.info(f"Media/file at index {media_cont.index(media)} uploaded {req_post.json()}")
 
                 media_debug = self.__get_uploaded_post_status__(req_post.json()['id'])
-                f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {media_cont.index(media)} to be 'FINISHED'" if media_debug['status'] != "FINISHED" else ''
-                logging.info(f"Media upload debug for media/file at index {media_cont.index(media)}:: {media_debug}{f_info}")
-                while media_debug['status'] != "FINISHED":
+                f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {media_cont.index(media)} to be 'FINISHED'" if media_debug.json()['status'] != "FINISHED" else ''
+                logging.info(f"Media upload debug for media/file at index {media_cont.index(media)}:: {media_debug.json()}{f_info}")
+                while media_debug.json()['status'] != "FINISHED":
                     time.sleep(self.__media_item_publish_wait_time__)
                     media_debug = self.__get_uploaded_post_status__(req_post.json()['id'])
-                    f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {media_cont.index(media)} to be 'FINISHED'" if media_debug['status'] != "FINISHED" else ''
-                    logging.info(f"Media upload debug for media/file at index {media_cont.index(media)}:: {media_debug}{f_info}")
-                    if media_debug['status'] == 'ERROR':
+                    f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {media_cont.index(media)} to be 'FINISHED'" if media_debug.json()['status'] != "FINISHED" else ''
+                    logging.info(f"Media upload debug for media/file at index {media_cont.index(media)}:: {media_debug.json()}{f_info}")
+                    if media_debug.json()['status'] == 'ERROR':
                         self.__delete_uploaded_files__(files=self.__handled_media__)
-                        logging.error(f"Media item / file at index {media_cont.index(media)} could not be published, Error:: {media_debug}")
+                        logging.error(f"Media item / file at index {media_cont.index(media)} could not be published, Error:: {media_debug.json()}")
                         return self.__tp_response_msg__(
                             message=f"Media item / file at index {media_cont.index(media)} could not be published", 
-                            body=media_debug,
+                            body=media_debug.json(),
+                            response=media_debug,
                             is_error=True
                         )
 
@@ -1072,6 +1085,7 @@ class ThreadsPipe:
                 return self.__tp_response_msg__(
                     message="An error occured while creating media carousel or a post with multiple files", 
                     body=req_create_carousel.json(),
+                    response=req_create_carousel,
                     is_error=True
                 )
             
@@ -1088,7 +1102,9 @@ class ThreadsPipe:
             
             caption = None if len(media_captions) == 0 else media_captions[0]
             caption = None if caption is None else {"alt_text": caption}
-            make_post_url = f"{endpoint}&media_type={media_type}{media_url}{post_text}{reply_to_id}{allowed_countries}{reply_control}"
+            attached_link_query = "&link_attachment=" + urlp.quote(attached_link,safe="") if attached_link is not None and len(medias) == 0 else ""
+            make_post_url = f"{endpoint}&media_type={media_type}{media_url}{post_text}{reply_to_id}{allowed_countries}{reply_control}{attached_link_query}"
+
             request_endpoint = requests.post(make_post_url, json=caption)
             
             if request_endpoint.status_code > 201:
@@ -1097,6 +1113,7 @@ class ThreadsPipe:
                 return self.__tp_response_msg__(
                     message="An error occured while creating media / single post blueprint", 
                     body=request_endpoint.json(),
+                    response=request_endpoint,
                     is_error=True
                 )
 
@@ -1105,19 +1122,20 @@ class ThreadsPipe:
         delete_gh_files = True
         try:
             post_debug = self.__get_uploaded_post_status__(MEDIA_CONTAINER_ID)
-            d_info = '\n::Note:: waiting for the post\'s ready status to be \'FINISHED\'' if post_debug['status'] != 'FINISHED' else ''
-            logging.info(f"Post publish-ready status:: {post_debug}{d_info}")
+            d_info = '\n::Note:: waiting for the post\'s ready status to be \'FINISHED\'' if post_debug.json()['status'] != 'FINISHED' else ''
+            logging.info(f"Post publish-ready status:: {post_debug.json()}{d_info}")
 
-            while post_debug['status'] != 'FINISHED':
+            while post_debug.json()['status'] != 'FINISHED':
                 time.sleep(self.__post_publish_wait_time__)
                 post_debug = self.__get_uploaded_post_status__(MEDIA_CONTAINER_ID)
-                d_info = '\n::Note:: waiting for the post\'s ready status to be \'FINISHED\'' if post_debug['status'] != 'FINISHED' else ''
-                logging.info(f"Post publish-ready status:: {post_debug}{post_debug}{d_info}")
-                if post_debug['status'] == 'ERROR':
-                    logging.error(f"Uploaded media could not be published, Error:: {post_debug}")
+                d_info = '\n::Note:: waiting for the post\'s ready status to be \'FINISHED\'' if post_debug.json()['status'] != 'FINISHED' else ''
+                logging.info(f"Post publish-ready status:: {post_debug.json()}{d_info}")
+                if post_debug.json()['status'] == 'ERROR':
+                    logging.error(f"Uploaded media could not be published, Error:: {post_debug.json()}")
                     return self.__tp_response_msg__(
                         message="Uploaded media could not be published", 
-                        body=post_debug,
+                        body=post_debug.json(),
+                        response=post_debug,
                         is_error=True
                     )
 
@@ -1130,21 +1148,23 @@ class ThreadsPipe:
                 return self.__tp_response_msg__(
                     message=f"Could not publish post", 
                     body=publish_post.json(),
+                    response=publish_post,
                     is_error=True
                 )
 
             post_debug = self.__get_uploaded_post_status__(MEDIA_CONTAINER_ID)
-            if post_debug['status'] != 'PUBLISHED':
+            if post_debug.json()['status'] != 'PUBLISHED':
                 self.__delete_uploaded_files__(files=self.__handled_media__)
                 delete_gh_files = False
-                logging.error(f"Post not sent, Error message {post_debug['error_message']}")
+                logging.error(f"Post not sent, Error message {post_debug.json()['error_message']}")
                 return self.__tp_response_msg__(
-                    message=f"Post not sent, Error message {post_debug['error_message']}", 
+                    message=f"Post not sent, Error message {post_debug.json()['error_message']}", 
                     body=post_debug,
+                    response=post_debug,
                     is_error=True
                 )
 
-            return {'id': publish_post.json()['id']}
+            return {'id': publish_post.json()['id'], 'publish_post': publish_post}
         
         except Exception as e:
             debug = {}
@@ -1154,6 +1174,9 @@ class ThreadsPipe:
             if len(medias) > 0:
                 debug = self.__get_uploaded_post_status__(MEDIA_CONTAINER_ID)
             
+            r_debug = debug
+            debug = debug.json() if type(debug) is requests.Response else debug
+
             logging.error(f"Could not send post")
             logging.error(f"Exception: {e}")
             if len(debug.keys()) > 0:
@@ -1162,6 +1185,7 @@ class ThreadsPipe:
             return self.__tp_response_msg__(
                 message=f"An unknown error occured could not send post", 
                 body=debug | {'e': e},
+                response=r_debug,
                 is_error=True
             )
     
@@ -1176,7 +1200,7 @@ class ThreadsPipe:
         
         media_debug_endpoint = f"https://graph.threads.net/v1.0/{media_id}?fields=status,error_message&access_token={self.__threads_access_token__}"
         req_debug_response = requests.get(media_debug_endpoint)
-        return req_debug_response.json()
+        return req_debug_response
     
     def __split_post__(self, post: str, tags: List) -> List[str]:
         if len(post) <= self.__threads_post_length_limit__:
@@ -1352,7 +1376,17 @@ class ThreadsPipe:
                 timeout=self.__gh_upload_timeout__,
                 
             )
-            req_upload_file.raise_for_status()
+
+            if req_upload_file.status_code > 201:
+                self.__delete_uploaded_files__(files=self.__handled_media__)
+                logging.error(f"An unknown error occured while trying to upload local file at index {file_index} to GitHub, error: {e}")
+                return self.__tp_response_msg__(
+                    message=f"An unknown error occured while trying to upload local file at index {file_index} to GitHub", 
+                    body={'e': e},
+                    response=req_upload_file,
+                    is_error=True
+                )
+            
             response = req_upload_file.json()
             file_obj['url'] = response['content']['download_url']
             file_obj['sha'] = response['content']['sha']
@@ -1393,6 +1427,7 @@ class ThreadsPipe:
                 logging.error(f"The delete status of the file at index {files.index(file)} from the GitHub repository could not be determined, Error::", e)
     
     @staticmethod
-    def __tp_response_msg__(message: str, body: Any, is_error: bool = False):
-        return {'info': 'error', 'error': body | { 'message': message }} if is_error else {'info': 'success', 'data': body | { 'message': message }}
+    def __tp_response_msg__(message: str, body: Any, response: Any = None, is_error: bool = False):
+        _request = {'response': response} if response is not None else {}
+        return ({'info': 'error', 'error': body } if is_error else {'info': 'success', 'data': body }) | { 'message': message } | _request
     
