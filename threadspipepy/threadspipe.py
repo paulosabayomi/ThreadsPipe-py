@@ -996,7 +996,7 @@ class ThreadsPipe:
             reply_to_id: Optional[str] = None,
             allowed_listed_country_codes: Union[str, None] = None,
             who_can_reply: Union[str, None] = None,
-            attached_link: str | None = None
+            attached_link: Union[str, None] = None
         ):
         """
             ### ThreadsPipe.__send_post__
