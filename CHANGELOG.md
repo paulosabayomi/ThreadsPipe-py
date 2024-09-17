@@ -1,5 +1,16 @@
 # Changelog
 
+## [Version 0.1.6] - 2024-09-18
+
+### Fix
+
+- Fixed a bug in pipe method in which the tags at the end posts that has newline or space characters are ignored
+
+### Added
+
+- Added `link_attachment_url` to the list of items to be returned for `get_post` abd `get_posts`.
+- Added `threads_api_version` parameter, for changing/setting the Threads API version number, to the class object parameter and to the `update_param` method.
+
 ## [Version 0.1.5] - 2024-09-17
 
 ### Fix

@@ -122,7 +122,7 @@ pipe = api.pipe(
         "https://images.unsplash.com/photo-1725462567088-0898ef927c8d?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0MHx8fGVufDB8fHx8fA%3D%3D"
     ],
     allowed_country_codes="US,CA,NG" # the user needs to have the geo-gating permission to use this feature read more below
-    
+
     # read more below on file captions
     file_captions=['image of a macbook on a white table', "image 1 from unsplash", "coding picture taken upclose", None, "video of watering a garden flower", None, None, None, None, "Image second from Unsplash", None, None, "Another third image from Unsplash", None, "Image 4 from Unsplash", None, "Image 5 from unsplash", None], 
     who_can_reply="accounts_you_follow"
@@ -275,7 +275,8 @@ api = ThreadsPipe(
     gh_username: str = None,
     gh_upload_timeout: int = 60 * 5,
     wait_on_rate_limit: bool = False,
-    check_rate_limit_before_post: bool = True
+    check_rate_limit_before_post: bool = True,
+    threads_api_version: str = 'v1.0'
 )
 ```
   
@@ -330,6 +331,8 @@ api = ThreadsPipe(
 *wait_on_rate_limit*: `bool | False` Whether ThreadsPipe should wait when rate limit is hit instead of rejecting the request, this can have an impact on the memory on your server in scenarios where multiple requests are made and will spawn multiple waiting processes.  
   
 *check_rate_limit_before_post*: `bool | True` By default ThreadsPipe checks rate limit everytime before proceeding to post, if you don't want it to perform the check you can set it to `False`.  
+  
+*threads_api_version*: `str | 'v1.0'` Set this parameter to the Meta's Threads API version you want to use, default is `v1.0`.
   
 ### ThreadsPipe.pipe
   
@@ -476,7 +479,8 @@ api.update_param(
     gh_username: str = None,
     gh_upload_timeout: int = None,
     wait_on_rate_limit: bool = None,
-    check_rate_limit_before_post: bool = None
+    check_rate_limit_before_post: bool = None,
+    threads_api_version: str = None
 )
 ```
   

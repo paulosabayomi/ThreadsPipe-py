@@ -20,6 +20,8 @@ class ThreadsPipe:
     __threads_access_token_endpoint__ = "https://graph.threads.net/oauth/access_token"
     __threads_access_token_refresh_endpoint__ = "https://graph.threads.net/refresh_access_token"
 
+    __threads_api_version__ = 'v1.0'
+
     __threads_post_length_limit__ = 500
     __threads_media_limit__ = 10
 
@@ -80,7 +82,8 @@ class ThreadsPipe:
             gh_username: str = None,
             gh_upload_timeout: int = 60 * 5,
             wait_on_rate_limit: bool = False,
-            check_rate_limit_before_post: bool = True
+            check_rate_limit_before_post: bool = True,
+            threads_api_version: str = 'v1.0'
         ) -> None:
 
         """
@@ -174,10 +177,15 @@ class ThreadsPipe:
             check_rate_limit_before_post: `bool | True` \
             By default ThreadsPipe checks rate limit everytime before proceeding to post, \
             if you don't want it to perform the check you can set it to `False`
+
+            threads_api_version: `str | 'v1.0'` \
+            Set this parameter to the Meta's Threads API version you want to use, default is `v1.0`
         """
 
         self.__threads_access_token__ = access_token
         self.__threads_user_id__ = user_id
+
+        self.__threads_api_version__ = threads_api_version
 
         self.__wait_before_post_publish__ = wait_before_post_publish
         self.__post_publish_wait_time__ = post_publish_wait_time
@@ -185,11 +193,11 @@ class ThreadsPipe:
         self.__wait_before_media_item_publish__ = wait_before_media_item_publish
         self.__media_item_publish_wait_time__ = media_item_publish_wait_time
 
-        self.__threads_media_post_endpoint__ = f"https://graph.threads.net/v1.0/{user_id}/threads?access_token={access_token}"
-        self.__threads_post_publish_endpoint__ = f"https://graph.threads.net/v1.0/{user_id}/threads_publish?access_token={access_token}"
-        self.__threads_rate_limit_endpoint__ = f"https://graph.threads.net/v1.0/{user_id}/threads_publishing_limit?access_token={access_token}"
-        self.__threads_post_reply_endpoint__ = f"https://graph.threads.net/v1.0/me/threads?access_token={access_token}"
-        self.__threads_profile_endpoint__ = f"https://graph.threads.net/v1.0/me?access_token={access_token}"
+        self.__threads_media_post_endpoint__ = f"https://graph.threads.net/{self.__threads_api_version__}/{user_id}/threads?access_token={access_token}"
+        self.__threads_post_publish_endpoint__ = f"https://graph.threads.net/{self.__threads_api_version__}/{user_id}/threads_publish?access_token={access_token}"
+        self.__threads_rate_limit_endpoint__ = f"https://graph.threads.net/{self.__threads_api_version__}/{user_id}/threads_publishing_limit?access_token={access_token}"
+        self.__threads_post_reply_endpoint__ = f"https://graph.threads.net/{self.__threads_api_version__}/me/threads?access_token={access_token}"
+        self.__threads_profile_endpoint__ = f"https://graph.threads.net/{self.__threads_api_version__}/me?access_token={access_token}"
 
         self.__handle_hashtags__ = handle_hashtags
 
@@ -225,7 +233,8 @@ class ThreadsPipe:
             gh_username: str = None,
             gh_upload_timeout: int = None,
             wait_on_rate_limit: bool = None,
-            check_rate_limit_before_post: bool = None
+            check_rate_limit_before_post: bool = None,
+            threads_api_version: str = None
         ) -> None:
 
         """
@@ -252,8 +261,8 @@ class ThreadsPipe:
 
         if access_token is not None:
             self.__threads_access_token__ = access_token
-            self.__threads_post_reply_endpoint__ = f"https://graph.threads.net/v1.0/me/threads?access_token={access_token}"
-            self.__threads_profile_endpoint__ = f"https://graph.threads.net/v1.0/me?access_token={access_token}"
+            self.__threads_post_reply_endpoint__ = f"https://graph.threads.net/{self.__threads_api_version__}/me/threads?access_token={access_token}"
+            self.__threads_profile_endpoint__ = f"https://graph.threads.net/{self.__threads_api_version__}/me?access_token={access_token}"
             
         if user_id is not None:
             self.__threads_user_id__ = user_id
@@ -269,12 +278,15 @@ class ThreadsPipe:
             self.__media_item_publish_wait_time__ = media_item_publish_wait_time
 
         if user_id is not None and access_token is not None:
-            self.__threads_media_post_endpoint__ = f"https://graph.threads.net/v1.0/{user_id}/threads?access_token={access_token}"
-            self.__threads_post_publish_endpoint__ = f"https://graph.threads.net/v1.0/{user_id}/threads_publish?access_token={access_token}"
-            self.__threads_rate_limit_endpoint__ = f"https://graph.threads.net/v1.0/{user_id}/threads_publishing_limit?access_token={access_token}"
+            self.__threads_media_post_endpoint__ = f"https://graph.threads.net/{self.__threads_api_version__}/{user_id}/threads?access_token={access_token}"
+            self.__threads_post_publish_endpoint__ = f"https://graph.threads.net/{self.__threads_api_version__}/{user_id}/threads_publish?access_token={access_token}"
+            self.__threads_rate_limit_endpoint__ = f"https://graph.threads.net/{self.__threads_api_version__}/{user_id}/threads_publishing_limit?access_token={access_token}"
         
         if handle_hashtags is not None:
             self.__handle_hashtags__ = handle_hashtags
+
+        if threads_api_version is not None:
+            self.__threads_api_version__ = threads_api_version
 
         if auto_handle_hashtags is not None:
             self.__auto_handle_hashtags__ = auto_handle_hashtags
@@ -429,7 +441,7 @@ class ThreadsPipe:
         
         tags = tags
 
-        _post = post
+        _post = post.strip()
 
         if allowed_country_codes is not None:
             is_eligible_for_geo_gating = self.is_eligible_for_geo_gating()
@@ -445,7 +457,7 @@ class ThreadsPipe:
 
         if post != None and (self.__handle_hashtags__ or self.__auto_handle_hashtags__):
             extract_tags_reg = re.compile(r"(?<=\s)(#[\w\d]+(?:\s#[\w\d]+)*)$")
-            extract_tags = [] if len(extract_tags_reg.findall(post)) == 0 else extract_tags_reg.findall(post)[0].split(' ')
+            extract_tags = [] if len(extract_tags_reg.findall(_post)) == 0 else extract_tags_reg.findall(_post)[0].split(' ')
             tags = tags if len(tags) > 0 else extract_tags
             tags = [" ".join(tags) for _ in range(len(tags))] if persist_tags_multipost is True else tags
             _post = _post if len(extract_tags) == 0 else extract_tags_reg.sub('', _post).strip()
@@ -746,7 +758,7 @@ class ThreadsPipe:
         since = "" if since_date is None else f"&since={since_date}"
         until = "" if until_date is None else f"&until={until_date}"
         _limit = "" if limit is None else f"&limit={str(limit)}"
-        url = self.__threads_post_reply_endpoint__ + f"&fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,children,is_quote_post{since}{until}{_limit}"
+        url = self.__threads_post_reply_endpoint__ + f"&fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,children,is_quote_post,link_attachment_url{since}{until}{_limit}"
         req_posts = requests.get(url)
         return req_posts.json()
     
@@ -765,7 +777,7 @@ class ThreadsPipe:
             JSON
         """
         
-        url = f"https://graph.threads.net/v1.0/{post_id}?fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,children,is_quote_post&access_token={self.__threads_access_token__}"
+        url = f"https://graph.threads.net/{self.__threads_api_version__}/{post_id}?fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,children,is_quote_post,link_attachment_url&access_token={self.__threads_access_token__}"
         req_post = requests.get(url)
         return req_post.json()
     
@@ -812,7 +824,7 @@ class ThreadsPipe:
         
         _reverse = "false" if reverse is False else "true"
         reply_level_type = "replies" if top_levels is True else "conversation"
-        url = f"https://graph.threads.net/v1.0/{post_id}/{reply_level_type}?fields=id,text,timestamp,media_product_type,media_type,media_url,shortcode,thumbnail_url,children,has_replies,root_post,replied_to,is_reply,hide_status&reverse={_reverse}&access_token={self.__threads_access_token__}"
+        url = f"https://graph.threads.net/{self.__threads_api_version__}/{post_id}/{reply_level_type}?fields=id,text,timestamp,media_product_type,media_type,media_url,shortcode,thumbnail_url,children,has_replies,root_post,replied_to,is_reply,hide_status&reverse={_reverse}&access_token={self.__threads_access_token__}"
         req_replies = requests.get(url)
         return req_replies.json()
     
@@ -840,7 +852,7 @@ class ThreadsPipe:
         since = "" if since_date is None else f"&since={since_date}"
         until = "" if until_date is None else f"&until={until_date}"
         _limit = "" if limit is None else f"&limit={str(limit)}"
-        url = f"https://graph.threads.net/v1.0/me/replies?fields=id,media_product_type,media_type,media_url,permalink,username,text,timestamp,shortcode,thumbnail_url,children,is_quote_post,has_replies,root_post,replied_to,is_reply,is_reply_owned_by_me,reply_audience&since={since}&until={until}&limit={_limit}&access_token={self.__threads_access_token__}"
+        url = f"https://graph.threads.net/{self.__threads_api_version__}/me/replies?fields=id,media_product_type,media_type,media_url,permalink,username,text,timestamp,shortcode,thumbnail_url,children,is_quote_post,has_replies,root_post,replied_to,is_reply,is_reply_owned_by_me,reply_audience&since={since}&until={until}&limit={_limit}&access_token={self.__threads_access_token__}"
         req_replies = requests.get(url)
         return req_replies.json()
     
@@ -864,7 +876,7 @@ class ThreadsPipe:
         """
         
         _hide = "true" if hide is True else "false"
-        url = f"https://graph.threads.net/v1.0/{reply_id}/manage_reply"
+        url = f"https://graph.threads.net/{self.__threads_api_version__}/{reply_id}/manage_reply"
         req_hide_reply = requests.post(
             url,
             data={
@@ -898,7 +910,7 @@ class ThreadsPipe:
         _metric = ",".join(self.threads_post_insight_metrics) if metrics == 'all' else metrics
         _metric = ','.join(_metric) if type(_metric) is list else _metric
         _metric = "&metric=" + _metric
-        url = f"https://graph.threads.net/v1.0/{post_id}/insights?access_token={self.__threads_access_token__}{_metric}"
+        url = f"https://graph.threads.net/{self.__threads_api_version__}/{post_id}/insights?access_token={self.__threads_access_token__}{_metric}"
         req_insight = requests.get(url)
         return req_insight.json()
     
@@ -945,7 +957,7 @@ class ThreadsPipe:
 
         _user_id = user_id if user_id is not None else "me"
 
-        url = f"https://graph.threads.net/v1.0/{_user_id}/threads_insights?access_token={self.__threads_access_token__}{_metric}{since}{until}{_demographic_break_down}"
+        url = f"https://graph.threads.net/{self.__threads_api_version__}/{_user_id}/threads_insights?access_token={self.__threads_access_token__}{_metric}{since}{until}{_demographic_break_down}"
         req_insight = requests.get(url)
         return req_insight.json()
     
@@ -1200,7 +1212,7 @@ class ThreadsPipe:
         """
         
         
-        media_debug_endpoint = f"https://graph.threads.net/v1.0/{media_id}?fields=status,error_message&access_token={self.__threads_access_token__}"
+        media_debug_endpoint = f"https://graph.threads.net/{self.__threads_api_version__}/{media_id}?fields=status,error_message&access_token={self.__threads_access_token__}"
         req_debug_response = requests.get(media_debug_endpoint)
         return req_debug_response
     
