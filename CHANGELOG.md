@@ -1,5 +1,11 @@
 # Changelog
 
+## [Version 0.1.5] - 2024-09-17
+
+### Fix
+
+- Fixed a bug in the `__split_post__` method causing the next batch of splitted posts, after adding hashtags, to reset back to the beginning.
+
 ## [Version 0.1.4] - 2024-09-17
 
 ### Added

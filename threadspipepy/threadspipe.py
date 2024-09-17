@@ -1216,21 +1216,24 @@ class ThreadsPipe:
         clip_tags = tags[:math.ceil(len(post) / self.__threads_post_length_limit__)]
 
         prev_strip = 0
+        tagged_striped_text = ""
         for i in range(len(clip_tags)):
             _tag = "\n"+clip_tags[i].strip()
             extra_strip = 3 if i == 0 else 6
             prev_tag = len("\n"+clip_tags[i - 1].strip()) + extra_strip if i > 0 else len("\n"+clip_tags[i].strip()) + extra_strip
             pre_dots = "" if i == 0 else "..."
-            sub_dots = "..." if i + 1 < len(clip_tags) else ""
+            sub_dots = "..." if i + 1 < len(clip_tags) or (self.__threads_post_length_limit__ * (i + 1)) < len(post) else ""
             put_tag = "" if self.__auto_handle_hashtags__ and not self.__should_handle_hash_tags__(post[(self.__threads_post_length_limit__ * i) : (self.__threads_post_length_limit__ * (i+1))]) else _tag
             start_strip = prev_tag
-            _post = pre_dots + post[(self.__threads_post_length_limit__ * i) - prev_strip : (self.__threads_post_length_limit__ * (i + 1)) - (extra_strip + prev_strip + len(put_tag))] + sub_dots + put_tag
+            stripped_text = post[(self.__threads_post_length_limit__ * i) - prev_strip : (self.__threads_post_length_limit__ * (i + 1)) - (extra_strip + prev_strip + len(put_tag))]
+            tagged_striped_text += stripped_text
+            _post = pre_dots + stripped_text + sub_dots + put_tag
             prev_strip = (extra_strip + prev_strip + len(put_tag))
             tagged_post.append(_post)
         
         has_more_text = len(''.join(tagged_post)) < len(post)
 
-        extra_text = post[len(''.join(tagged_post)):]
+        extra_text = post[len(tagged_striped_text):]
 
         if has_more_text:
             text_split_range = math.ceil(len(extra_text)/self.__threads_post_length_limit__)
@@ -1239,7 +1242,7 @@ class ThreadsPipe:
                 extra_strip = 3 if i == 0 and len(tagged_post) == 0 else 6
                 pre_dots = "" if i == 0 and len(tagged_post) == 0 else "..."
                 sub_dots = "..." if i + 1 < text_split_range else ""
-                _post = pre_dots + post[(self.__threads_post_length_limit__ * i) - start_strip : (self.__threads_post_length_limit__ * (i + 1)) - (extra_strip + start_strip)] + sub_dots
+                _post = pre_dots + extra_text[(self.__threads_post_length_limit__ * i) - start_strip : (self.__threads_post_length_limit__ * (i + 1)) - (extra_strip + start_strip)] + sub_dots
                 start_strip = (extra_strip + start_strip)
                 untagged_post.append(_post)
 
@@ -1320,7 +1323,7 @@ class ThreadsPipe:
                     )
                 
                 self.__handled_media__.append({ 'type': media_type, 'url': file })
-                continue
+                # continue
             elif self.__is_base64__(file):
                 _file = self.__get_file_url__(base64.b64decode(file), media_files.index(file))
                 if 'error' in _file:
