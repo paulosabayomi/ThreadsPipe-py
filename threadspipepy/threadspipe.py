@@ -443,8 +443,8 @@ class ThreadsPipe:
 
         if post != None and (self.__handle_hashtags__ or self.__auto_handle_hashtags__):
             extract_tags_reg = re.compile(r"(?<=\s)(#[\w\d]+(?:\s#[\w\d]+)*)$")
-            extract_tags = extract_tags_reg.findall(post)[0].split(' ')
-            tags = tags if len(extract_tags) == 0 else extract_tags
+            extract_tags = [] if len(extract_tags_reg.findall(post)) == 0 else extract_tags_reg.findall(post)[0].split(' ')
+            tags = tags if len(tags) > 0 else extract_tags
             tags = [" ".join(tags) for _ in range(len(tags))] if persist_tags_multipost is True else tags
             _post = _post if len(extract_tags) == 0 else extract_tags_reg.sub('', _post).strip()
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Version 0.1.3] - 2024-09-17
+
+### Fix
+
+- A bug fix in the pipe method.
+
 ## [Version 0.1.2] - 2024-09-16
 
 ### Fix
