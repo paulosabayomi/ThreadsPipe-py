@@ -3,7 +3,7 @@
     actions like create post, respond to posts and replies, get posts and users account insights and many more.
 """
 
-import requests, base64, time, logging, re, math, filetype, string, random, datetime, webbrowser
+import requests, base64, time, logging, re, math, filetype, string, random, datetime, webbrowser, os
 import urllib.parse as urlp
 
 from  typing import Optional, List, Any, Union
@@ -48,6 +48,8 @@ class ThreadsPipe:
     __check_rate_limit_before_post__ = True
 
     __handled_media__ = []
+
+    __file_url_reg__ = re.compile(r"(?P<url>((https?:\/\/)?[^\s\/]+?\.?)?(([a-zA-Z0-9]+\.[\w]{2,})|([\d]{1,}\.[\d]{1,}\.[\d]{1,}\.[\d]{1,}))([\:\d]+)?\/?([a-zA-Z0-9\.\-\_\/]+)?(\?[a-zA-Z0-9\.\&\#\=\-\_\%\?]+)?)$")
 
     __threads_auth_scope__ = {
         'basic': 'threads_basic', 
@@ -1277,8 +1279,7 @@ class ThreadsPipe:
     
     def __handle_media__(self, media_files: List[Any]):
         for file in media_files:
-            url_file_reg = re.compile(r"^(https?:\/\/)?([a-zA-Z0-9]+\.)?[a-zA-Z0-9]+\.[a-zA-Z0-9]{2,}(\/.*)?$")
-            if type(file) == str and url_file_reg.match(file):
+            if type(file) == str and self.__file_url_reg__.fullmatch(file):
                 has_ext_reg = re.compile(r"\.(?P<ext>[a-zA-Z0-9]+)$").search(file)
                 media_type = None
                 if has_ext_reg != None:
@@ -1286,7 +1287,8 @@ class ThreadsPipe:
                     media_type = None if media_type is None else media_type.mime
                 
                 if has_ext_reg is None or media_type is None:
-                    req_check_type = requests.head(file)
+                    file_url = 'http://' + file if urlp.urlparse(file).scheme == '' else file
+                    req_check_type = requests.head(file_url)
                     if req_check_type.status_code > 200:
                         self.__delete_uploaded_files__(files=self.__handled_media__)
                         logging.error(f"File at index {media_files.index(file)} could not be found so its type could not be determined")
@@ -1324,11 +1326,20 @@ class ThreadsPipe:
                 if 'error' in _file:
                     return _file
                 self.__handled_media__.append(_file)
-            else:
+            elif type(file) == bytes or os.path.exists(file):
                 _file = self.__get_file_url__(file, media_files.index(file))
                 if 'error' in _file:
                     return _file
                 self.__handled_media__.append(_file)
+            else:
+                self.__delete_uploaded_files__(files=self.__handled_media__)
+                logging.error(f"Provided file at index {media_files.index(file)} is invalid")
+                return self.__tp_response_msg__(
+                    message=f"Provided file at index {media_files.index(file)} is invalid", 
+                    body={},
+                    is_error=True
+                )
+
 
         return self.__handled_media__
     
@@ -1425,6 +1436,9 @@ class ThreadsPipe:
                         logging.warning(f"File at index {files.index(file)} was not deleted from GitHub due to an unknown error, status_code::", req_upload_file.status_code)
             except Exception as e:
                 logging.error(f"The delete status of the file at index {files.index(file)} from the GitHub repository could not be determined, Error::", e)
+            finally:
+                self.__handled_media__ = []
+                
     
     @staticmethod
     def __tp_response_msg__(message: str, body: Any, response: Any = None, is_error: bool = False):

@@ -1,5 +1,17 @@
 # Changelog
 
+## [Version 0.1.4] - 2024-09-17
+
+### Added
+  
+- A test case for the supported file url formats
+- Support for ip address file urls added
+- Added support for ports in file urls
+
+### Fix
+
+- A fix for the RegExp check for file urls, the former RegExp doesn't pass for some urls and only matches some url formats and that caused errors which results into treating some file urls as local files.
+
 ## [Version 0.1.3] - 2024-09-17
 
 ### Fix

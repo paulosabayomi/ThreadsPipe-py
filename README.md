@@ -122,7 +122,9 @@ pipe = api.pipe(
         "https://images.unsplash.com/photo-1725462567088-0898ef927c8d?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0MHx8fGVufDB8fHx8fA%3D%3D"
     ],
     allowed_country_codes="US,CA,NG" # the user needs to have the geo-gating permission to use this feature read more below
-    file_captions=['image of a macbook on a white table', "image 1 from unsplash", "coding picture taken upclose", None, "video of watering a garden flower", None, None, None, None, "Image second from Unsplash", None, None, "Another third image from Unsplash", None, "Image 4 from Unsplash", None, "Image 5 from unsplash", None],
+    
+    # read more below on file captions
+    file_captions=['image of a macbook on a white table', "image 1 from unsplash", "coding picture taken upclose", None, "video of watering a garden flower", None, None, None, None, "Image second from Unsplash", None, None, "Another third image from Unsplash", None, "Image 4 from Unsplash", None, "Image 5 from unsplash", None], 
     who_can_reply="accounts_you_follow"
 )
 
@@ -176,7 +178,7 @@ Only long lived access token can be refreshed, short lived access token can not 
 threadspipepy refresh_token --access_token="your-unexpired-long-lived-access-token" --env_path="./.env" --env_variable="acc_tkn"
 ```
 
-This will refresh the long lived access token and then automatically update the provided environment variable with the newly generate long lived token, but the  `--env_path` and `--env_variable` arguments are optional, there are also additional 2 options that can be passed in which the later will also work for access tokens generation above, `--auto_mode=true` and `--silent=true`, if the `--auto_mode` is set to `true` e.g. `... --auto_mode=true` then the `--env_path` and `--env_variable` arguments will be required to be set for this operation and the `--access_token` argument will be ignored and the value of the `--env_variable` in the provided `.env` file will be used in making the refresh token request and then will also be automatically updated with the newly generated long lived access token. see below for more explanations, use the `--silent=true` if you want to disable logging.  
+This will refresh the long lived access token and then automatically update the provided environment variable with the newly generate long lived token, but the  `--env_path` and `--env_variable` arguments are optional, there are also additional 2 options that can be passed in which the later will also work for access tokens generation above, `--auto_mode=true` and `--silent=true`, if the `--auto_mode` is set to `true` e.g. `... --auto_mode=true` then the `--env_path` and `--env_variable` arguments will be required to be set for this operation and the `--access_token` argument will be ignored and the value of the `--env_variable` in the provided `.env` file will be used in making the refresh token request and then will also be automatically updated with the newly generated long lived access token. see below for more explanations, use the `--silent=true` or just `-s` if you want to disable logging.  
   
 Type `threadspipepy -h` in the terminal for help and more details of ThreadsPipe CLI usage. You can also read more on the commands below.  
   

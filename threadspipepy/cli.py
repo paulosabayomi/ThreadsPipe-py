@@ -160,7 +160,7 @@ def run():
     
         args = parser.parse_args()
 
-        if args.silent == 'true':
+        if args.silent is not None:
             logging.disable()
 
         if args.action not in ['access_token', 'refresh_token']:

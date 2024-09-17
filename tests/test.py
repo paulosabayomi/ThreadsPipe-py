@@ -94,3 +94,54 @@ def test___is_base64___method():
     assert is_b64 is True
     # the random text should return false
     assert is_rand_text_b64 is False
+
+def test__is_url__method():
+    """
+        test__is_url__method
+        This function tests for supported remote file urls
+        Format is [url, expected check]
+    """
+    urls = [
+        # long full urls
+        ["https://thespacedevs-prod.nyc3.digitaloceanspaces.com/media/images/jamila_gilbert_image_20230508161019.png", True],
+        ["https://www.digitaloceanspaces.com/media/images/jamila_gilbert_image_20230508161019.png",  True],
+        ["https://images.unsplash.com/photo-1721332149371-fa99da451baa?q=80&w=2536&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", True],
+        ["https://images.unsplash.com/?q=80&w=2536&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", True],
+        ["https://images.unsplash.com?q=80&w=2536&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", True],
+
+        # unsupported urls
+        ["/path/to/file.jpg", False],
+        ["C:/path/to/file.jpg", False],
+        ["E:/Users/paulos_ab/path/to/file.jpg", False],
+        ["https://example", False],
+        ["https://localhost", False],
+
+        # urls with ports are supported
+        ["https://www.example.com:829/path/to/file.jpg?h=file&type=byte", True],
+        ["https://example.com:9201/path/to/file.png", True],
+
+        # urls with no schemes are supported and should be true
+        ["example.com/path/to/file.jpg", True],
+        ["example.com", True],
+
+        # normal urls are also supported, though might be rejected
+        ["https://google.com", True],
+
+        # IP address urls and ones with port are supported
+        ["192.0.0.0?h=file&type=byte", True],
+        ["192.0.0.0/path/to/file.jpg?h=file&type=byte", True],
+        ["192.0.0.0:80/path/to/file.jpg?h=file&type=byte", True],
+        ["142.250.184.174/path/to/file.jpg?h=file&type=byte", True],
+        ["https://142.250.184.174:80/path/to/file.jpg?h=file&type=byte", True],
+        ["http://142.250.184.174:80/path/to/file.jpg?h=file&type=byte", True],
+    ]
+
+    th_init = ThreadsPipe(
+        user_id="test_user_id",
+        access_token="test_access_token",
+    )
+
+    for url in urls:
+        print('url', url[0], th_init.__file_url_reg__.fullmatch(url[0]))
+        assert (th_init.__file_url_reg__.fullmatch(url[0]) is not None) == url[1]
+
