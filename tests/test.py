@@ -49,7 +49,7 @@ def test_update_param_method():
 def test_post_splitting_test():
     """
         test_post_splitting_test
-        tests the post splitting into batches if the method is working corectly
+        tests the post splitting into batches whether the method is working correctly
     """
     th_init = ThreadsPipe(
         user_id="test_user_id",
@@ -75,6 +75,9 @@ def test_post_splitting_test():
     assert len(splitted_post) > 0
     # check if the length of the first batch is 500
     assert len(splitted_post[0]) == 500
+    # check if all the batches except the last batch are exactly 500 in length
+    for i in range(len(splitted_post) - 1):
+        assert len(splitted_post[i]) == 500
 
 def test___is_base64___method():
     """
@@ -115,6 +118,7 @@ def test__is_url__method():
         ["E:/Users/paulos_ab/path/to/file.jpg", False],
         ["https://example", False],
         ["https://localhost", False],
+        ["http://localhost", False],
 
         # urls with ports are supported
         ["https://www.example.com:829/path/to/file.jpg?h=file&type=byte", True],
@@ -142,6 +146,5 @@ def test__is_url__method():
     )
 
     for url in urls:
-        print('url', url[0], th_init.__file_url_reg__.fullmatch(url[0]))
         assert (th_init.__file_url_reg__.fullmatch(url[0]) is not None) == url[1]
 

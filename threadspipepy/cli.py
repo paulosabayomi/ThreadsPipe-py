@@ -128,8 +128,8 @@ def __refresh_token__(access_token: str, env_path: str = None, env_variable: str
 
 def run():
     parser = argparse.ArgumentParser(
-        prog=Fore.BLUE + "ThreadsPipe CLI",
-        description=Fore.GREEN + "ThreadsPipe CLI tool to get short and long lived access tokens and to refresh long lived access tokens" + Style.RESET_ALL
+        prog=Fore.BLUE + "threadspipepy",
+        description=Fore.GREEN + "ThreadsPipe CLI is a tool to get short and long lived access tokens and to refresh long lived access tokens" + Style.RESET_ALL,
     )
 
     # get access token args
@@ -154,7 +154,7 @@ def run():
     parser.add_argument('-v', '--env_variable', required=False if check_for_auto_mode == None else True, help=Fore.GREEN + "The name of the variable that ThreadsPipe should automatically update with the \
             long lived access token." + Style.RESET_ALL)
     
-    parser.add_argument('-s', '--silent', required=False, help=Fore.GREEN + "Set this to 'true' if you want to disable logging" + Style.RESET_ALL)
+    parser.add_argument('-s', '--silent', required=False, help=Fore.GREEN + "Set this if you want to disable logging, note if it's passed with or without value it will disable logging" + Style.RESET_ALL)
 
     if len(sys.argv) > 1:
     

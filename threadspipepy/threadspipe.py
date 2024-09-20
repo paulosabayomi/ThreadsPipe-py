@@ -23,7 +23,7 @@ class ThreadsPipe:
     __threads_api_version__ = 'v1.0'
 
     __threads_post_length_limit__ = 500
-    __threads_media_limit__ = 10
+    __threads_media_limit__ = 20
 
     __threads_rate_limit__ = 250
     __threads_reply_rate_limit__ = 1000
@@ -383,8 +383,8 @@ class ThreadsPipe:
             files: `List | []` \
             The media files that will be attached to the post, the allowed file types \
             can be `bytes`, url to a file, and `base64`, you can also pass in the path to a local file, \
-            the number of files can be any length and more than 10, if the number of files \
-            is more than 10 which is the limit for a post, ThreadsPipe would split them into batches of 10 files \
+            the number of files can be any length and more than 20, if the number of files \
+            is more than 20 which is the limit for a post, ThreadsPipe would split them into batches of 20 files \
             and send the first batch with the first text batch and the rest of the batch either as replies to the \
             root post (if the text content of the post is less than 500) or with the text batch reply(ies) to the \
             root post.
@@ -468,6 +468,7 @@ class ThreadsPipe:
         _captions = [file_captions[x] if x < len(file_captions) else None for x in range(len(files))]
 
         files = files[:self.__threads_media_limit__] if chained_post is False else files
+
         files = self.__handle_media__(files)
         if 'error' in files:
             return files
@@ -479,15 +480,15 @@ class ThreadsPipe:
 
         media_ids = []
         prev_post_chain_id = None if reply_to_id is None else {'id': reply_to_id}
-        for s_post in splitted_post:
+        for index, s_post in enumerate(splitted_post):
             prev_post_chain_id = self.__send_post__(
                 s_post, 
-                medias=[] if splitted_post.index(s_post) >= len(splitted_files) else splitted_files[splitted_post.index(s_post)],
-                media_captions=[] if splitted_post.index(s_post) >= len(splitted_captions) else splitted_captions[splitted_post.index(s_post)],
+                medias=[] if index >= len(splitted_files) else splitted_files[index],
+                media_captions=[] if index >= len(splitted_captions) else splitted_captions[index],
                 reply_to_id=None if prev_post_chain_id is None else prev_post_chain_id['id'],
                 allowed_listed_country_codes=allowed_country_codes,
                 who_can_reply=who_can_reply,
-                attached_link=link_attachments[splitted_post.index(s_post)] if splitted_post.index(s_post) < len(link_attachments) else None
+                attached_link=link_attachments[index] if index < len(link_attachments) else None
             )
             if 'error' in prev_post_chain_id:
                 return prev_post_chain_id
@@ -495,11 +496,12 @@ class ThreadsPipe:
                 media_ids.append(prev_post_chain_id['id'])
         
         if len(splitted_files) > len(splitted_post):
-            for file in splitted_files[len(splitted_post):]:
+            remaining_caption_parts = splitted_captions[len(splitted_post):]
+            for index, file in enumerate(splitted_files[len(splitted_post):]):
                 prev_post_chain_id = self.__send_post__(
                     None, 
                     medias=file,
-                    media_captions=[] if splitted_post.index(s_post) >= len(splitted_captions) else splitted_captions[splitted_post.index(s_post)],
+                    media_captions=[] if index >= len(remaining_caption_parts) else remaining_caption_parts[index],
                     reply_to_id=None if prev_post_chain_id is None else prev_post_chain_id['id'],
                     allowed_listed_country_codes=allowed_country_codes,
                     who_can_reply=who_can_reply
@@ -758,7 +760,7 @@ class ThreadsPipe:
         since = "" if since_date is None else f"&since={since_date}"
         until = "" if until_date is None else f"&until={until_date}"
         _limit = "" if limit is None else f"&limit={str(limit)}"
-        url = self.__threads_post_reply_endpoint__ + f"&fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,children,is_quote_post,link_attachment_url{since}{until}{_limit}"
+        url = self.__threads_post_reply_endpoint__ + f"&fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,alt_text,children,is_quote_post,link_attachment_url{since}{until}{_limit}"
         req_posts = requests.get(url)
         return req_posts.json()
     
@@ -777,7 +779,7 @@ class ThreadsPipe:
             JSON
         """
         
-        url = f"https://graph.threads.net/{self.__threads_api_version__}/{post_id}?fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,children,is_quote_post,link_attachment_url&access_token={self.__threads_access_token__}"
+        url = f"https://graph.threads.net/{self.__threads_api_version__}/{post_id}?fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,alt_text,children,is_quote_post,link_attachment_url&access_token={self.__threads_access_token__}"
         req_post = requests.get(url)
         return req_post.json()
     
@@ -1048,37 +1050,37 @@ class ThreadsPipe:
 
         if is_carousel:
             MEDIA_CONTAINER_IDS_ARR = []
-            for media in media_cont:
+            for index, media in enumerate(media_cont):
                 media_query = "image_url=" + media['url'].replace('&', '%26') if media['type'] == 'IMAGE' else "video_url=" + media['url'].replace('&', '%26')
-                caption = None if media_cont.index(media) > len(media_captions) else media_captions[media_cont.index(media)]
-                caption = None if caption is None else {"alt_text": caption}
-                carousel_post_url = f"{self.__threads_media_post_endpoint__}&media_type={media['type']}&is_carousel_item=true&{media_query}{allowed_countries}"
-                req_post = requests.post(carousel_post_url, json=caption)
+                caption = None if index > len(media_captions) else media_captions[index]
+                caption = "" if caption is None else f"&alt_text={self.__quote_str__(caption)}"
+                carousel_post_url = f"{self.__threads_media_post_endpoint__}&media_type={media['type']}&is_carousel_item=true&{media_query}{allowed_countries}{caption}"
+                req_post = requests.post(carousel_post_url)
                 if req_post.status_code > 201:
                     self.__delete_uploaded_files__(files=self.__handled_media__)
-                    logging.error(f"An error occured while creating an item container or a uploading media file at index {media_cont.index(media)}, Error:: {req_post.json()}")
+                    logging.error(f"An error occured while creating an item container or a uploading media file at index {index}, Error:: {req_post.json()}")
                     return self.__tp_response_msg__(
-                        message=f"An error occured while creating an item container or a uploading media file at index {media_cont.index(media)}", 
+                        message=f"An error occured while creating an item container or a uploading media file at index {index}", 
                         body=req_post.json(),
                         response=req_post,
                         is_error=True
                     )
 
-                logging.info(f"Media/file at index {media_cont.index(media)} uploaded {req_post.json()}")
+                logging.info(f"Media/file at index {index} uploaded {req_post.json()}")
 
                 media_debug = self.__get_uploaded_post_status__(req_post.json()['id'])
-                f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {media_cont.index(media)} to be 'FINISHED'" if media_debug.json()['status'] != "FINISHED" else ''
-                logging.info(f"Media upload debug for media/file at index {media_cont.index(media)}:: {media_debug.json()}{f_info}")
+                f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {index} to be 'FINISHED'" if media_debug.json()['status'] != "FINISHED" else ''
+                logging.info(f"Media upload debug for media/file at index {index}:: {media_debug.json()}{f_info}")
                 while media_debug.json()['status'] != "FINISHED":
                     time.sleep(self.__media_item_publish_wait_time__)
                     media_debug = self.__get_uploaded_post_status__(req_post.json()['id'])
-                    f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {media_cont.index(media)} to be 'FINISHED'" if media_debug.json()['status'] != "FINISHED" else ''
-                    logging.info(f"Media upload debug for media/file at index {media_cont.index(media)}:: {media_debug.json()}{f_info}")
+                    f_info = f"\n::Note:: waiting for the upload status of the media item/file at index {index} to be 'FINISHED'" if media_debug.json()['status'] != "FINISHED" else ''
+                    logging.info(f"Media upload debug for media/file at index {index}:: {media_debug.json()}{f_info}")
                     if media_debug.json()['status'] == 'ERROR':
                         self.__delete_uploaded_files__(files=self.__handled_media__)
-                        logging.error(f"Media item / file at index {media_cont.index(media)} could not be published, Error:: {media_debug.json()}")
+                        logging.error(f"Media item / file at index {index} could not be published, Error:: {media_debug.json()}")
                         return self.__tp_response_msg__(
-                            message=f"Media item / file at index {media_cont.index(media)} could not be published", 
+                            message=f"Media item / file at index {index} could not be published", 
                             body=media_debug.json(),
                             response=media_debug,
                             is_error=True
@@ -1115,11 +1117,11 @@ class ThreadsPipe:
             reply_to_id = "" if reply_to_id is None else f"&reply_to_id={reply_to_id}"
             
             caption = None if len(media_captions) == 0 else media_captions[0]
-            caption = None if caption is None else {"alt_text": caption}
+            caption = "" if caption is None else f"&alt_text={self.__quote_str__(caption)}"
             attached_link_query = "&link_attachment=" + urlp.quote(attached_link,safe="") if attached_link is not None and len(medias) == 0 else ""
-            make_post_url = f"{endpoint}&media_type={media_type}{media_url}{post_text}{reply_to_id}{allowed_countries}{reply_control}{attached_link_query}"
+            make_post_url = f"{endpoint}&media_type={media_type}{media_url}{post_text}{reply_to_id}{allowed_countries}{reply_control}{attached_link_query}{caption}"
 
-            request_endpoint = requests.post(make_post_url, json=caption)
+            request_endpoint = requests.post(make_post_url)
             
             if request_endpoint.status_code > 201:
                 self.__delete_uploaded_files__(files=self.__handled_media__)
@@ -1145,6 +1147,7 @@ class ThreadsPipe:
                 d_info = '\n::Note:: waiting for the post\'s ready status to be \'FINISHED\'' if post_debug.json()['status'] != 'FINISHED' else ''
                 logging.info(f"Post publish-ready status:: {post_debug.json()}{d_info}")
                 if post_debug.json()['status'] == 'ERROR':
+                    self.__delete_uploaded_files__(files=self.__handled_media__)
                     logging.error(f"Uploaded media could not be published, Error:: {post_debug.json()}")
                     return self.__tp_response_msg__(
                         message="Uploaded media could not be published", 
@@ -1293,7 +1296,7 @@ class ThreadsPipe:
             return False
     
     def __handle_media__(self, media_files: List[Any]):
-        for file in media_files:
+        for index,file in enumerate(media_files):
             if type(file) == str and self.__file_url_reg__.fullmatch(file):
                 has_ext_reg = re.compile(r"\.(?P<ext>[a-zA-Z0-9]+)$").search(file)
                 media_type = None
@@ -1306,9 +1309,9 @@ class ThreadsPipe:
                     req_check_type = requests.head(file_url)
                     if req_check_type.status_code > 200:
                         self.__delete_uploaded_files__(files=self.__handled_media__)
-                        logging.error(f"File at index {media_files.index(file)} could not be found so its type could not be determined")
+                        logging.error(f"File at index {index} could not be found so its type could not be determined")
                         return self.__tp_response_msg__(
-                            message=f"File at index {media_files.index(file)} could not be found so its type could not be determined", 
+                            message=f"File at index {index} could not be found so its type could not be determined", 
                             body={},
                             is_error=True
                         )
@@ -1316,9 +1319,9 @@ class ThreadsPipe:
 
                 if media_type == None:
                     self.__delete_uploaded_files__(files=self.__handled_media__)
-                    logging.error(f"Filetype of the file at index {media_files.index(file)} is invalid")
+                    logging.error(f"Filetype of the file at index {index} is invalid")
                     return self.__tp_response_msg__(
-                        message=f"Filetype of the file at index {media_files.index(file)} is invalid", 
+                        message=f"Filetype of the file at index {index} is invalid", 
                         body={},
                         is_error=True
                     )
@@ -1327,9 +1330,9 @@ class ThreadsPipe:
 
                 if media_type not in ['VIDEO', 'IMAGE']:
                     self.__delete_uploaded_files__(files=self.__handled_media__)
-                    logging.error(f"Provided file at index {media_files.index(file)} must be either an image or video file, {media_type} given")
+                    logging.error(f"Provided file at index {index} must be either an image or video file, {media_type} given")
                     return self.__tp_response_msg__(
-                        message=f"Provided file at index {media_files.index(file)} must be either an image or video file, {media_type} given", 
+                        message=f"Provided file at index {index} must be either an image or video file, {media_type} given", 
                         body={},
                         is_error=True
                     )
@@ -1337,20 +1340,20 @@ class ThreadsPipe:
                 self.__handled_media__.append({ 'type': media_type, 'url': file })
                 # continue
             elif self.__is_base64__(file):
-                _file = self.__get_file_url__(base64.b64decode(file), media_files.index(file))
+                _file = self.__get_file_url__(base64.b64decode(file), index)
                 if 'error' in _file:
                     return _file
                 self.__handled_media__.append(_file)
             elif type(file) == bytes or os.path.exists(file):
-                _file = self.__get_file_url__(file, media_files.index(file))
+                _file = self.__get_file_url__(file, index)
                 if 'error' in _file:
                     return _file
                 self.__handled_media__.append(_file)
             else:
                 self.__delete_uploaded_files__(files=self.__handled_media__)
-                logging.error(f"Provided file at index {media_files.index(file)} is invalid")
+                logging.error(f"Provided file at index {index} is invalid")
                 return self.__tp_response_msg__(
-                    message=f"Provided file at index {media_files.index(file)} is invalid", 
+                    message=f"Provided file at index {index} is invalid", 
                     body={},
                     is_error=True
                 )
@@ -1430,7 +1433,7 @@ class ThreadsPipe:
         return file_obj
     
     def __delete_uploaded_files__(self, files: List[dict]):
-        for file in files:
+        for index,file in enumerate(files):
             try:
                 if 'sha' in file:
                     cur_time = datetime.datetime.today().ctime()
@@ -1448,9 +1451,9 @@ class ThreadsPipe:
                         timeout=self.__gh_upload_timeout__
                     )
                     if req_upload_file.status_code != 200:
-                        logging.warning(f"File at index {files.index(file)} was not deleted from GitHub due to an unknown error, status_code::", req_upload_file.status_code)
+                        logging.warning(f"File at index {index} was not deleted from GitHub due to an unknown error, status_code::", req_upload_file.status_code)
             except Exception as e:
-                logging.error(f"The delete status of the file at index {files.index(file)} from the GitHub repository could not be determined, Error::", e)
+                logging.error(f"The delete status of the file at index {index} from the GitHub repository could not be determined, Error::", e)
             finally:
                 self.__handled_media__ = []
                 

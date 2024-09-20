@@ -131,7 +131,7 @@ pipe = api.pipe(
 print("pipe", pipe)
 ```
 
-The length of the `post` can be more than the limit which is currently 500 characters and / or the number of files can be more than the limit per post which is 10 files per post and in that case ThreadsPipe will split the post into a 'X(fka Twitter)-like thread' post or simply the post will be chained together, if the post has text longer than 500 and images more than 10, both will be splitted into batches and the first batches of both the files and text content will be the main/root post and the following batches will be like a reply to the first post creating something like a thread on X(fka Twitter) or a chained post.  
+The length of the `post` can be more than the limit which is currently 500 characters and / or the number of files can be more than the limit per post which is 20 files per post and in that case ThreadsPipe will split the post into a 'X(fka Twitter)-like thread' post or simply the post will be chained together, if the post has text longer than 500 and images more than 20, both will be splitted into batches and the first batches of both the files and text content will be the main/root post and the following batches will be like a reply to the first post creating something like a thread on X(fka Twitter) or a chained post.  
   
 ### Uploading locally available files to Threads
 
@@ -172,7 +172,7 @@ The command will generate access tokens by swapping the authorization code for b
   
 #### To refresh long lived access token on the CLI
   
-Only long lived access token can be refreshed, short lived access token can not be refreshed after it has expired, long lived access token expires after 60 days and you can refresh them after they are at least 24 hours old, so to refresh the long lived token with the ThreadsPipe CLI, this can also be done with the `refresh_token` method, run the commands below:
+Only long lived access token can be refreshed, short lived access token can not be refreshed after it has expired, long lived access token expires after 60 days and you can refresh them after they are at least 24 hours old and have not expired, so to refresh the long lived token with the ThreadsPipe CLI, this can also be done with the `refresh_token` method, run the commands below:
 
 ```bash
 threadspipepy refresh_token --access_token="your-unexpired-long-lived-access-token" --env_path="./.env" --env_variable="acc_tkn"
@@ -188,73 +188,73 @@ Read more below.
   
 ### Methods
   
-- ThreadsPipe.update_param  
+- *`ThreadsPipe.update_param`*  
 To update the default class parameters, it is not guaranteed that the updated value of the parameter(s) will be used if this method is called before performing an action with the parameter(s) that was set with the method, so it is recommended to call this method to set the parameter(s) before performing the action(s) with the parameter(s) that was set.
   
-- ThreadsPipe.pipe  
+- *`ThreadsPipe.pipe`*  
 The pipe method is for sending posts and replies to Threads.  
   
-- ThreadsPipe.get_quota_usage  
+- *`ThreadsPipe.get_quota_usage`*  
 The method to get user's quota usage.  
   
-- ThreadsPipe.get_auth_token  
+- *`ThreadsPipe.get_auth_token`*  
 Use this method to implement the Authorization Window, The Authorization Window
 allows your app to get authorization codes and permissions from app users.
 Authorization codes can be exchanged for Threads user access tokens, which must be included when fetching an app user's profile, retrieving Threads media, publishing posts, reading replies, managing replies, or viewing insights.  
   
-- ThreadsPipe.get_access_tokens  
+- *`ThreadsPipe.get_access_tokens`*  
 This method swaps the access token gotten from Authorization Window for short and long lived access token.  
   
-- ThreadsPipe.refresh_token  
+- *`ThreadsPipe.refresh_token`*  
 Use this method to refresh unexpired long lived access tokens before they expire, long lived access tokens expire after 60 days, and you can only refresh long lived token and anytime after it is at least 24 hours old.  
   
-- ThreadsPipe.is_eligible_for_geo_gating  
+- *`ThreadsPipe.is_eligible_for_geo_gating`*  
 Use this method to check for an account's eligibility for posting geo-gated contents.  
   
-- ThreadsPipe.get_allowlisted_country_codes  
+- *`ThreadsPipe.get_allowlisted_country_codes`*  
 Use this method to get a list of the country code values that can be used to limit geo-gating contents.  
   
-- ThreadsPipe.get_posts  
+- *`ThreadsPipe.get_posts`*  
 This method returns all the posts an account has posted including the replies.  
   
-- ThreadsPipe.get_post  
+- *`ThreadsPipe.get_post`*  
 This method returns the data of a single post.  
   
-- ThreadsPipe.get_profile  
+- *`ThreadsPipe.get_profile`*  
 The method to get user profile.  
   
-- ThreadsPipe.get_post_replies  
+- *`ThreadsPipe.get_post_replies`*  
 The method to get post replies.  
   
-- ThreadsPipe.get_user_replies  
+- *`ThreadsPipe.get_user_replies`*  
 The method to get all user's replies.  
   
-- ThreadsPipe.hide_reply  
+- *`ThreadsPipe.hide_reply`*  
 The method to hide a reply under a user's post.  
   
-- ThreadsPipe.get_post_insights
+- *`ThreadsPipe.get_post_insigh`*ts
 The method to get post insights, like number of like, view and so on.  
   
-- ThreadsPipe.get_user_insights  
+- *`ThreadsPipe.get_user_insights`*  
 The method to get user's account insights.  
   
-- ThreadsPipe.get_post_intent  
+- *`ThreadsPipe.get_post_intent`*  
 The method to get Threads' post intent.  
   
-- ThreadsPipe.get_follow_intent  
+- *`ThreadsPipe.get_follow_intent`*  
 The method to get the follow intent link, this intents allow people to easily follow a Threads account directly from your website.  
   
 ### Properties
   
-- `ThreadsPipe.__threads_auth_scope__`  
+- *`ThreadsPipe.__threads_auth_scope__`*  
   
-- ThreadsPipe.threads_post_insight_metrics  
+- *`ThreadsPipe.threads_post_insight_metrics`*  
   
-- ThreadsPipe.threads_user_insight_metrics  
+- *`ThreadsPipe.threads_user_insight_metrics`*  
   
-- ThreadsPipe.threads_follower_demographic_breakdown_list  
+- *`ThreadsPipe.threads_follower_demographic_breakdown_list`*  
   
-- ThreadsPipe.who_can_reply_list  
+- *`ThreadsPipe.who_can_reply_list`*  
   
 ### ThreadsPipe class
   
@@ -395,7 +395,7 @@ api.pipe(
 **Parameters**  
 *post*: `str | ""` This parameter takes a string which is the text content of the post, it can be of any length and can be more than 500 which is the current character limit allowed in a post, ThreadsPipe will split the text into different batches of 500 characters, if the provided text is more than 500 and upload the first batch as the root post and then upload the rest of the batches as a reply to the root post, then the resulting post is going to be like an X thread post.  
   
-*files*: `List | []` The media files that will be attached to the post, the allowed file types can be `bytes`, url to a file, and `base64`, you can also pass in the path to a local file, the number of files can be any length and more than 10, if the number of files is more than 10 which is the limit for a post, ThreadsPipe would split them into batches of 10 files and send the first batch with the first text batch and the rest of the batch either as replies to the root post (if the text content of the post is less than 500) or with the text batch reply(ies) to the root post.  
+*files*: `List | []` The media files that will be attached to the post, the allowed file types can be `bytes`, url to a file, and `base64`, you can also pass in the path to a local file, the number of files can be any length and more than 20, if the number of files is more than 20 which is the limit for a post, ThreadsPipe would split them into batches of 20 files and send the first batch with the first text batch and the rest of the batch either as replies to the root post (if the text content of the post is less than 500) or with the text batch reply(ies) to the root post.  
   
 *file_captions*: `List[str | None] | []` The captions for the media files, provide the captions based on the index of the provided files and provide `None` at the index of the files that does not have caption, the length of the provided caption does not have to match the number of files provided, for example if 5 files were provided, to provided captions for files at index 1 and 4 it would be `[None, "Caption for file at index 1", None, None, "Caption for file at index 4"]`.  
   
@@ -801,7 +801,7 @@ This command will generate both short and long lived access tokens with the auth
 | --redirect_uri | `True` | `-r` | This redirect uri should be the same as the value of the `redirect_uri` argument passed to the `get_auth_token` method or the request will be rejected and the authorization token will be expired. |
 | --env_path | `False` | `-p` | This is optional, and it is useful and only required if you want ThreadsPipe to automatically update a variable in an .env file with the long lived token access token. |
 | --env_variable | `False` | `-v` | The name of the variable that ThreadsPipe should automatically update with the long lived access token. |
-| --silent | `False` | `-s` | Set this to 'true' if you want to disable logging. |  
+| --silent | `False` | `-s` | Set this if you want to disable logging, note if it's passed with or without value it will disable logging |  
   
 ### refresh_token command
   
@@ -814,11 +814,11 @@ This command will refresh your long lived access token with a new and life-exten
 | --auto_mode | `False` | `-auto` | If this argument is set to 'true' when refreshing access token, the value of the env variable argument will be used in place of the --access_token option (which can be omitted in this case) to make the refresh token request and will be automatically updated with the newly generated long lived access token. |
 | --env_path | `True` if the `--auto_mode` argument is set and `False` if not set | `-p` | Absolute or relative path to the `.env` file, this is optional, but it is required if `--auto_mode` is set to `true` and in that case the `--access_token` argument will be ignored and the value of the `--env_variable` in the provided `.env` (which is expected to be the long lived access token) file will be used to make the refresh token refresh and then will be updated with the new and life-extended long lived access token |
 | --env_variable | `True` if the `--auto_mode` argument is set and `False` if not set | `-v` | The name of the variable that ThreadsPipe should automatically update with the long lived access token. |
-| --silent | `False` | `-s` | Set this to 'true' if you want to disable logging. |
+| --silent | `False` | `-s` | Set this if you want to disable logging, note if it's passed with or without value it will disable logging |
   
 ## Inspiration
   
-I got the idea when working on my Space bot which is called 'Astronomy Bot' on Threads, @astronomybot, when I faced issues like not able to post local media files to Threads and having to truncate the texts in posts to the 500-character limit which affects many posts, and then I searched for a library for Threads and that uses the official API but couldn't find and I decided to create ThreadsPipe.
+I decided to create ThreadsPipe when I was working on my Space bot which is called 'Astronomy Bot' on Threads, @astronomybot, when I faced issues like not able to post local media files to Threads and having to truncate the texts in posts to the 500-character limit which affected many posts, and then I searched for libraries for Threads and that uses the official Meta's Threads API but I couldn't find any and I decided to create ThreadsPipe.
   
 ## LICENSE
 

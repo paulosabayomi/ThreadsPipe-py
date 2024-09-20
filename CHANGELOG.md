@@ -1,5 +1,15 @@
 # Changelog
 
+## [Version 0.2.0] - 2024-09-20
+
+### Fix
+
+- I added the method that I forgot to add that will delete the temporarily uploaded github files when the post debug check before publishing posts fails.
+
+### Added
+
+- Added the recent update (released on September 19, 2024) to the Meta's Threads API for the increase number of media files that can be in a post and updated the limit in the README.
+
 ## [Version 0.1.6] - 2024-09-18
 
 ### Fix

@@ -2,3 +2,4 @@ __pycache__
 tests/__pycache__
 threadspipepy/__pycache__
 .pytest_cache
+.DS_Store
