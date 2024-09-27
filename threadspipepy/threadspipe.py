@@ -1338,8 +1338,8 @@ class ThreadsPipe:
                     )
                 
                 self.__handled_media__.append({ 'type': media_type, 'url': file })
-                # continue
-            elif self.__is_base64__(file):
+                
+            elif type(file) == str and self.__is_base64__(file):
                 _file = self.__get_file_url__(base64.b64decode(file), index)
                 if 'error' in _file:
                     return _file

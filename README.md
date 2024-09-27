@@ -232,7 +232,7 @@ The method to get all user's replies.
 - *`ThreadsPipe.hide_reply`*  
 The method to hide a reply under a user's post.  
   
-- *`ThreadsPipe.get_post_insigh`*ts
+- *`ThreadsPipe.get_post_insights`*  
 The method to get post insights, like number of like, view and so on.  
   
 - *`ThreadsPipe.get_user_insights`*  

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Version 0.2.1] - 2024-09-27
+
+### Fix
+
+- A bug caused by method that checks if a file is base64 or not and causes error if the file is a binary
+
 ## [Version 0.2.0] - 2024-09-20
 
 ### Fix
