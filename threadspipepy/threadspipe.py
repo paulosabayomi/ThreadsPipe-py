@@ -322,6 +322,8 @@ class ThreadsPipe:
             persist_tags_multipost = False,
             allowed_country_codes: Union[str, List[str]] = None,
             link_attachments: List[str] = [],
+            quote_post_id: Union[str, int, None] = None,
+            persist_quoted_post: bool = False
         ):
 
         """
@@ -432,6 +434,13 @@ class ThreadsPipe:
             then in this case because only one link is allowed per post the links will be shared among the \
             chained posts.  
 
+            quote_post_id: `str | int | None` \
+            To quote a post, pass in the post id of the post you want to quote to this parameter.  
+              
+            persist_quoted_post: `bool | False` \
+            Set this parameter to `True` if you want the quoted post to be persisted and attached to each
+            post chain if the text or media of the post is more than the limit  
+
             ### Returns
             dict | requests.Response | Response
         """
@@ -480,6 +489,7 @@ class ThreadsPipe:
 
         media_ids = []
         prev_post_chain_id = None if reply_to_id is None else {'id': reply_to_id}
+        _quote_post_id = quote_post_id
         for index, s_post in enumerate(splitted_post):
             prev_post_chain_id = self.__send_post__(
                 s_post, 
@@ -488,8 +498,13 @@ class ThreadsPipe:
                 reply_to_id=None if prev_post_chain_id is None else prev_post_chain_id['id'],
                 allowed_listed_country_codes=allowed_country_codes,
                 who_can_reply=who_can_reply,
-                attached_link=link_attachments[index] if index < len(link_attachments) else None
+                attached_link=link_attachments[index] if index < len(link_attachments) else None,
+                quote_post_id = _quote_post_id
             )
+
+            if persist_quoted_post is False:
+                _quote_post_id = None
+
             if 'error' in prev_post_chain_id:
                 return prev_post_chain_id
             else:
@@ -519,6 +534,36 @@ class ThreadsPipe:
             response=prev_post_chain_id['publish_post'],
             body={'media_ids': media_ids}
         )
+
+        
+    def repost_post(self, post_id: Union[str, int]):
+        """
+            ## ThreadsPipe.repost_post
+
+            ### Description   
+            The method to repost posts
+
+            ### Parameters
+
+            post_id: `str | int` \
+            The id of the post that should be reposted
+
+            ### Returns
+            JSON | Dict
+
+        """
+        endpoint = f"https://graph.threads.net/v1.0/{post_id}/repost?access_token={self.__threads_access_token__}"
+        request_repost = requests.post(endpoint)
+
+        if request_repost.status_code > 201:
+            return self.__tp_response_msg__(
+                message='Could not repost post',
+                is_error=True,
+                response=request_repost,
+                body=request_repost.json()
+            )
+        
+        return request_repost.json()
 
         
     def get_quota_usage(self, for_reply=False):
@@ -760,7 +805,7 @@ class ThreadsPipe:
         since = "" if since_date is None else f"&since={since_date}"
         until = "" if until_date is None else f"&until={until_date}"
         _limit = "" if limit is None else f"&limit={str(limit)}"
-        url = self.__threads_post_reply_endpoint__ + f"&fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,alt_text,children,is_quote_post,link_attachment_url{since}{until}{_limit}"
+        url = self.__threads_post_reply_endpoint__ + f"&fields=id,is_quote_post,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,alt_text,children,is_quote_post,link_attachment_url{since}{until}{_limit}"
         req_posts = requests.get(url)
         return req_posts.json()
     
@@ -779,7 +824,7 @@ class ThreadsPipe:
             JSON
         """
         
-        url = f"https://graph.threads.net/{self.__threads_api_version__}/{post_id}?fields=id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,alt_text,children,is_quote_post,link_attachment_url&access_token={self.__threads_access_token__}"
+        url = f"https://graph.threads.net/{self.__threads_api_version__}/{post_id}?fields=id,is_quote_post,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,shortcode,thumbnail_url,alt_text,children,is_quote_post,link_attachment_url&access_token={self.__threads_access_token__}"
         req_post = requests.get(url)
         return req_post.json()
     
@@ -1012,7 +1057,8 @@ class ThreadsPipe:
             reply_to_id: Optional[str] = None,
             allowed_listed_country_codes: Union[str, None] = None,
             who_can_reply: Union[str, None] = None,
-            attached_link: Union[str, None] = None
+            attached_link: Union[str, None] = None,
+            quote_post_id: Union[str, int] = None
         ):
         """
             ### ThreadsPipe.__send_post__
@@ -1045,6 +1091,7 @@ class ThreadsPipe:
 
         MEDIA_CONTAINER_ID = ''
         post_text = f"&text={self.__quote_str__(post)}" if post is not None else ""
+        quote_post = f"&quote_post_id={str(quote_post_id)}" if quote_post_id is not None else ""
         allowed_countries = f"&allowlisted_country_codes={allowed_listed_country_codes}" if allowed_listed_country_codes is not None else ""
         reply_control = "" if who_can_reply is None else f"&reply_control={who_can_reply}"
 
@@ -1092,7 +1139,7 @@ class ThreadsPipe:
             media_ids_str = ",".join(MEDIA_CONTAINER_IDS_ARR)
             endpoint = self.__threads_post_reply_endpoint__ if reply_to_id is not None else self.__threads_media_post_endpoint__
             reply_to_id = "" if reply_to_id is None else f"&reply_to_id={reply_to_id}"
-            carousel_cont_url = f"{endpoint}&media_type=CAROUSEL&children={media_ids_str}{post_text}{reply_to_id}{allowed_countries}{reply_control}"
+            carousel_cont_url = f"{endpoint}&media_type=CAROUSEL&children={media_ids_str}{post_text}{reply_to_id}{allowed_countries}{reply_control}{quote_post}"
 
             req_create_carousel = requests.post(carousel_cont_url)
             if req_create_carousel.status_code > 201:
@@ -1119,7 +1166,7 @@ class ThreadsPipe:
             caption = None if len(media_captions) == 0 else media_captions[0]
             caption = "" if caption is None else f"&alt_text={self.__quote_str__(caption)}"
             attached_link_query = "&link_attachment=" + urlp.quote(attached_link,safe="") if attached_link is not None and len(medias) == 0 else ""
-            make_post_url = f"{endpoint}&media_type={media_type}{media_url}{post_text}{reply_to_id}{allowed_countries}{reply_control}{attached_link_query}{caption}"
+            make_post_url = f"{endpoint}&media_type={media_type}{media_url}{post_text}{reply_to_id}{allowed_countries}{reply_control}{attached_link_query}{caption}{quote_post}"
 
             request_endpoint = requests.post(make_post_url)
             

@@ -156,6 +156,26 @@ api.update_param(
 )
 ```
   
+### Quoting posts
+  
+To quote a post the `pipe` method is used the same way it is used to send posts and reposts, just pass the post id of the post to be quoted to the `quote_post_id` parameter, example  
+  
+```py
+pipe = api.pipe(
+    post="A very long text...",
+    files=[
+        "http://example.com/path/to/file.jpg",
+        #...
+    ],
+    # ...
+    quote_post_id=1234567890111213 # pass in id of the post you want to quote
+)
+
+print("pipe", pipe)
+```  
+  
+If the provided post and media are more than the limit they will be splitted into a chained post, and to attach the quoted post to each of the chained post set the `persist_quoted_post` parament to `True`.  
+  
 ### Using the ThreadsPipe CLI
 
 With the ThreadsPipe CLI you can get access tokens (short and long lived) and you can also refresh the long lived access token before it expires. To use the CLI you can install ThreadsPipe with the `pip install threadspipepy[cli]` command and it will either only install the dependencies requires for the CLI if you already have ThreadsPipe installed or install the CLI dependencies along with the ThreadsPipe installation.  
@@ -213,6 +233,9 @@ Use this method to check for an account's eligibility for posting geo-gated cont
   
 - *`ThreadsPipe.get_allowlisted_country_codes`*  
 Use this method to get a list of the country code values that can be used to limit geo-gating contents.  
+  
+- *`ThreadsPipe.repost_post`*  
+The method to repost posts.  
   
 - *`ThreadsPipe.get_posts`*  
 This method returns all the posts an account has posted including the replies.  
@@ -413,8 +436,12 @@ api.pipe(
   
 *link_attachments*: `List[str] | None` Use this to explicitly provide link(s) for the post, this will only work for text-only posts, if the number of links are more than 1 and the post was splitted into a chained post, see the `pipe` method's `post` parameter doc for more info on chained posts, then in this case because only one link is allowed per post the links will be shared among the chained posts.  
   
+*quote_post_id*: `str | int | None` To quote a post, pass in the post id of the post you want to quote to this parameter.  
+  
+*persist_quoted_post*: `bool | False` Set this parameter to `True` if you want the quoted post to be persisted and attached to each post chain if the text or media of the post is more than the limit  
+  
 *Returns*  
-dict | requests.Response | Response
+dict | requests.Response | Response  
   
 ### ThreadsPipe.get_quota_usage
   
@@ -579,7 +606,19 @@ api.get_allowlisted_country_codes(
 *limit*: `str | int | None` Use this parameter to limit the amount of data returned.  
   
 *Returns*  
-JSON
+JSON  
+  
+### ThreadsPipe.repost_post
+
+**Description**  
+The method to repost posts
+
+**Parameters**  
+post_id: `str | int` \
+The id of the post that should be reposted  
+  
+*Returns*
+JSON | Dict  
   
 ### ThreadsPipe.get_posts
   
@@ -816,6 +855,10 @@ This command will refresh your long lived access token with a new and life-exten
 | --env_variable | `True` if the `--auto_mode` argument is set and `False` if not set | `-v` | The name of the variable that ThreadsPipe should automatically update with the long lived access token. |
 | --silent | `False` | `-s` | Set this if you want to disable logging, note if it's passed with or without value it will disable logging |
   
+## Webhooks
+
+To get realtime action notifications you can subscribe to the Threads Webhooks, to get start started visit the Threads Webhooks page [https://developers.facebook.com/docs/threads/webhooks](https://developers.facebook.com/docs/threads/webhooks)
+
 ## Inspiration
   
 I decided to create ThreadsPipe when I was working on my Space bot which is called 'Astronomy Bot' on Threads, @astronomybot, when I faced issues like not able to post local media files to Threads and having to truncate the texts in posts to the 500-character limit which affected many posts, and then I searched for libraries for Threads and that uses the official Meta's Threads API but I couldn't find any and I decided to create ThreadsPipe.

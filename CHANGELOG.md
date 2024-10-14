@@ -1,5 +1,15 @@
 # Changelog
 
+## [Version 0.3.0] - 2024-10-14
+
+### Added
+
+- Added the update to the Meta's Threads API released on October 9, 2024 for the support for post quoting and reposts to ThreadsPipe.
+
+### Fix
+
+- In the `__refresh_token__` function in the cli.py file I changed the return statement in the status code check to `pprint.pp`.
+
 ## [Version 0.2.1] - 2024-09-27
 
 ### Fix

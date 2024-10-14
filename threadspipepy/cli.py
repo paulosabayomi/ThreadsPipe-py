@@ -33,9 +33,6 @@ def __get_access_token__(app_id: str, app_secret: str, auth_code: str, redirect_
             redirect_uri: `str` \
             This redirect uri should be the same as the value of the `redirect_uri` argument passed to the `get_auth_token` \
             method or the request will be rejected and the authorization token will be expired.
-
-            ### Returns
-            dict | JSON
         """
         threads_access_token_endpoint = "https://graph.threads.net/oauth/access_token"
         
@@ -59,8 +56,7 @@ def __get_access_token__(app_id: str, app_secret: str, auth_code: str, redirect_
             })
             sys.exit()
         
-            
-
+        
         req_long_lived_access_token = requests.get(
             f"https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret={app_secret}&access_token={short_lived_token['access_token']}"
         )
@@ -105,20 +101,20 @@ def __refresh_token__(access_token: str, env_path: str = None, env_variable: str
             env_variable: `str | None` \
             The name of the variable that ThreadsPipe should automatically update with the newly \
             generated long lived access token.
-
-            ### Returns
-            JSON
         """
         
         access_token = get_key(env_path, env_variable) if env_path != None and env_variable != None and auto_mode == True else access_token
         threads_access_token_refresh_endpoint = "https://graph.threads.net/refresh_access_token"
         refresh_token_url = threads_access_token_refresh_endpoint + f"?grant_type=th_refresh_token&access_token={access_token}"
         refresh_token = requests.get(refresh_token_url)
+
         if refresh_token.status_code > 201:
-            return {
+            pprint.pp({
                 'message': "An error occured could not refresh access token",
                 'error': refresh_token.json()
-            }
+            })
+            sys.exit()
+            
         if env_path != None and env_variable != None:
             os.chdir(os.getcwd())
             set_key(env_path, env_variable, refresh_token.json()['access_token'])
