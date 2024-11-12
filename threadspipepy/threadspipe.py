@@ -60,7 +60,7 @@ class ThreadsPipe:
         'manage_replies': 'threads_manage_replies', 
         'insights': 'threads_manage_insights'
     }
-    threads_post_insight_metrics = ['views', 'likes', 'replies', 'reposts', 'quotes']
+    threads_post_insight_metrics = ['views', 'likes', 'replies', 'reposts', 'quotes', 'shares']
     threads_user_insight_metrics = ["views", "likes", "replies", "reposts", "quotes", "followers_count", "follower_demographics"]
     threads_follower_demographic_breakdown_list = ['country', 'city', 'age', 'gender']
     who_can_reply_list = ['everyone', 'accounts_you_follow', 'mentioned_only']
@@ -628,10 +628,16 @@ class ThreadsPipe:
             None
         """
         
-        scope = [x for x in self.__threads_auth_scope__.values()] if type(scope) == str and scope == 'all' else [self.__threads_auth_scope__[x] for x in scope]
-        scope = ','.join(scope)
+        _scope = ""
+        if type(scope) == list:
+            _scope = ",".join([self.__threads_auth_scope__[x] for x in scope])
+        elif type(scope) == str and scope == 'all':
+            _scope = ','.join([x for x in self.__threads_auth_scope__.values()])
+        else:
+            _scope = self.__threads_auth_scope__[scope]
+        
         state = f"&state={state}" if state is not None else ""
-        url = f'https://threads.net/oauth/authorize/?client_id={app_id}&redirect_uri={redirect_uri}&response_type=code&scope={scope}{state}'
+        url = f'https://threads.net/oauth/authorize/?client_id={app_id}&redirect_uri={redirect_uri}&response_type=code&scope={_scope}{state}'
         webbrowser.open(url)
 
     def get_access_tokens(self, app_id: str, app_secret: str, auth_code: str, redirect_uri: str):

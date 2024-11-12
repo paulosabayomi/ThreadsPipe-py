@@ -1,5 +1,15 @@
 # Changelog
 
+## [Version 0.4.0] - 2024-11-12
+
+### Added
+
+- Added the update to the Meta's Threads API released on October 28, 2024, the `shares` metric indicating the number of shares of a Threads post
+
+### Fix
+
+- Fixed a bug in the `get_auth_token` method in which the `scope` property was not handled to handle the case where user provided a single scope.
+
 ## [Version 0.3.0] - 2024-10-14
 
 ### Added
