@@ -1,5 +1,11 @@
 # Changelog
 
+## [Version 0.4.2] - 2024-11-19
+
+### Fix
+
+- Perfected the bug fix in version 0.4.1 because the update caused rest of the part of the post text to be stripped off and replaced with the tag, now fixed and working properly.
+
 ## [Version 0.4.1] - 2024-11-19
 
 ### Fix
