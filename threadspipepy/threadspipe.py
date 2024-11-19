@@ -1272,12 +1272,7 @@ class ThreadsPipe:
         req_debug_response = requests.get(media_debug_endpoint)
         return req_debug_response
     
-    def __split_post__(self, post: str, tags: List) -> List[str]:
-        if len(post) <= self.__threads_post_length_limit__:
-            first_tag = "" if len(tags) == 0 else "\n"+tags[0].strip()
-            first_tag = "" if self.__auto_handle_hashtags__ and not self.__should_handle_hash_tags__(post) else first_tag
-            return [post + first_tag]
-        
+    def __split_post__(self, post: str, tags: List) -> List[str]:        
         tagged_post = []
         untagged_post = []
 

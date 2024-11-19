@@ -1,5 +1,11 @@
 # Changelog
 
+## [Version 0.4.1] - 2024-11-19
+
+### Fix
+
+- Fixed a bug in the `__split_post__` method in which post length that is a bit less than 500 will get returned with the added tag making it go above the post limit.
+
 ## [Version 0.4.0] - 2024-11-12
 
 ### Added
