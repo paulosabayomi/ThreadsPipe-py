@@ -1,5 +1,11 @@
 # Changelog
 
+## [Version 0.4.3] - 2024-11-19
+
+### Fix
+
+- Forgot to uncomment some lines of code I commented out when testing.
+
 ## [Version 0.4.2] - 2024-11-19
 
 ### Fix

@@ -472,70 +472,69 @@ class ThreadsPipe:
             _post = _post if len(extract_tags) == 0 else extract_tags_reg.sub('', _post).strip()
 
         splitted_post = self.__split_post__(_post, tags)
-        print("splitted_post", splitted_post)
 
-        # splitted_post = [splitted_post[0]] if chained_post == False else splitted_post
+        splitted_post = [splitted_post[0]] if chained_post == False else splitted_post
 
-        # _captions = [file_captions[x] if x < len(file_captions) else None for x in range(len(files))]
+        _captions = [file_captions[x] if x < len(file_captions) else None for x in range(len(files))]
 
-        # files = files[:self.__threads_media_limit__] if chained_post is False else files
+        files = files[:self.__threads_media_limit__] if chained_post is False else files
 
-        # files = self.__handle_media__(files)
-        # if 'error' in files:
-        #     return files
-        # splitted_files = [files[self.__threads_media_limit__ * x: self.__threads_media_limit__ * (x + 1)] for x in range(math.ceil(len(files)/self.__threads_media_limit__))]
+        files = self.__handle_media__(files)
+        if 'error' in files:
+            return files
+        splitted_files = [files[self.__threads_media_limit__ * x: self.__threads_media_limit__ * (x + 1)] for x in range(math.ceil(len(files)/self.__threads_media_limit__))]
 
-        # splitted_captions = [_captions[self.__threads_media_limit__ * x: self.__threads_media_limit__ * (x + 1)] for x in range(math.ceil(len(files)/self.__threads_media_limit__))]
+        splitted_captions = [_captions[self.__threads_media_limit__ * x: self.__threads_media_limit__ * (x + 1)] for x in range(math.ceil(len(files)/self.__threads_media_limit__))]
 
-        # allowed_country_codes = allowed_country_codes if type(allowed_country_codes) is str else None if allowed_country_codes is None else ",".join(allowed_country_codes)
+        allowed_country_codes = allowed_country_codes if type(allowed_country_codes) is str else None if allowed_country_codes is None else ",".join(allowed_country_codes)
 
-        # media_ids = []
-        # prev_post_chain_id = None if reply_to_id is None else {'id': reply_to_id}
-        # _quote_post_id = quote_post_id
-        # for index, s_post in enumerate(splitted_post):
-        #     prev_post_chain_id = self.__send_post__(
-        #         s_post, 
-        #         medias=[] if index >= len(splitted_files) else splitted_files[index],
-        #         media_captions=[] if index >= len(splitted_captions) else splitted_captions[index],
-        #         reply_to_id=None if prev_post_chain_id is None else prev_post_chain_id['id'],
-        #         allowed_listed_country_codes=allowed_country_codes,
-        #         who_can_reply=who_can_reply,
-        #         attached_link=link_attachments[index] if index < len(link_attachments) else None,
-        #         quote_post_id = _quote_post_id
-        #     )
+        media_ids = []
+        prev_post_chain_id = None if reply_to_id is None else {'id': reply_to_id}
+        _quote_post_id = quote_post_id
+        for index, s_post in enumerate(splitted_post):
+            prev_post_chain_id = self.__send_post__(
+                s_post, 
+                medias=[] if index >= len(splitted_files) else splitted_files[index],
+                media_captions=[] if index >= len(splitted_captions) else splitted_captions[index],
+                reply_to_id=None if prev_post_chain_id is None else prev_post_chain_id['id'],
+                allowed_listed_country_codes=allowed_country_codes,
+                who_can_reply=who_can_reply,
+                attached_link=link_attachments[index] if index < len(link_attachments) else None,
+                quote_post_id = _quote_post_id
+            )
 
-        #     if persist_quoted_post is False:
-        #         _quote_post_id = None
+            if persist_quoted_post is False:
+                _quote_post_id = None
 
-        #     if 'error' in prev_post_chain_id:
-        #         return prev_post_chain_id
-        #     else:
-        #         media_ids.append(prev_post_chain_id['id'])
+            if 'error' in prev_post_chain_id:
+                return prev_post_chain_id
+            else:
+                media_ids.append(prev_post_chain_id['id'])
         
-        # if len(splitted_files) > len(splitted_post):
-        #     remaining_caption_parts = splitted_captions[len(splitted_post):]
-        #     for index, file in enumerate(splitted_files[len(splitted_post):]):
-        #         prev_post_chain_id = self.__send_post__(
-        #             None, 
-        #             medias=file,
-        #             media_captions=[] if index >= len(remaining_caption_parts) else remaining_caption_parts[index],
-        #             reply_to_id=None if prev_post_chain_id is None else prev_post_chain_id['id'],
-        #             allowed_listed_country_codes=allowed_country_codes,
-        #             who_can_reply=who_can_reply
-        #         )
-        #         if 'error' in prev_post_chain_id:
-        #             return prev_post_chain_id
-        #         else:
-        #             media_ids.append(prev_post_chain_id['id'])
+        if len(splitted_files) > len(splitted_post):
+            remaining_caption_parts = splitted_captions[len(splitted_post):]
+            for index, file in enumerate(splitted_files[len(splitted_post):]):
+                prev_post_chain_id = self.__send_post__(
+                    None, 
+                    medias=file,
+                    media_captions=[] if index >= len(remaining_caption_parts) else remaining_caption_parts[index],
+                    reply_to_id=None if prev_post_chain_id is None else prev_post_chain_id['id'],
+                    allowed_listed_country_codes=allowed_country_codes,
+                    who_can_reply=who_can_reply
+                )
+                if 'error' in prev_post_chain_id:
+                    return prev_post_chain_id
+                else:
+                    media_ids.append(prev_post_chain_id['id'])
 
-        # self.__delete_uploaded_files__(files=files)
-        # logging.info("Post piped to Instagram Threads successfully!")
-        # return self.__tp_response_msg__(
-        #     message='Post piped to Instagram Threads successfully!',
-        #     is_error=False,
-        #     response=prev_post_chain_id['publish_post'],
-        #     body={'media_ids': media_ids}
-        # )
+        self.__delete_uploaded_files__(files=files)
+        logging.info("Post piped to Instagram Threads successfully!")
+        return self.__tp_response_msg__(
+            message='Post piped to Instagram Threads successfully!',
+            is_error=False,
+            response=prev_post_chain_id['publish_post'],
+            body={'media_ids': media_ids}
+        )
 
         
     def repost_post(self, post_id: Union[str, int]):
