@@ -1,5 +1,11 @@
 # Changelog
 
+## [Version 0.4.4] - 2024-11-19
+
+### Fix
+
+- Forgot to add dots to the end of each post split when post length is less than the post limit but it will be more than the limit after the provided tag(s) is/are added to it, this bug was originally fixed in v0.4.1 but forgot to add dots to the splitted post, and this has been fixed.
+
 ## [Version 0.4.3] - 2024-11-19
 
 ### Fix

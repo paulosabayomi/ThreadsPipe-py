@@ -1,6 +1,6 @@
 [project]
 name = "threadspipepy"
-version = "0.4.3"
+version = "0.4.4"
 authors = [
   { name="Abayomi Amusa", email="amusapaulos99@gmail.com" },
 ]

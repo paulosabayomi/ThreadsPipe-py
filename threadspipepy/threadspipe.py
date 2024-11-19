@@ -1279,9 +1279,13 @@ class ThreadsPipe:
             first_tag = "" if self.__auto_handle_hashtags__ and not self.__should_handle_hash_tags__(post) else first_tag
             r_post = []
             if len(post + first_tag) > self.__threads_post_length_limit__:
-                extra_post_len = (len(post) + len(first_tag)) - self.__threads_post_length_limit__
-                r_post.append(post[0:len(post) - extra_post_len]+first_tag)
-                r_post.append(post[len(post) - extra_post_len:])
+                extra_post_len = (len(post) + len(first_tag) + 3) - self.__threads_post_length_limit__
+                r_post.append(post[0:len(post) - extra_post_len]+'...'+first_tag)
+                second_tag = ""
+                if len(tags) > 1:
+                    second_tag = "" if len(tags) == 0 else "\n"+tags[1].strip()
+                    second_tag = "" if self.__auto_handle_hashtags__ and not self.__should_handle_hash_tags__(post) else second_tag
+                r_post.append('...'+post[len(post) - extra_post_len:]+second_tag)
             else:
                 r_post.append(post + first_tag)
             return r_post
