@@ -12,15 +12,8 @@ from dotenv import set_key
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 
 class ThreadsPipe:
-    __threads_media_post_endpoint__ = ""
-    __threads_post_publish_endpoint__ = ""
-    __threads_rate_limit_endpoint__ = ""
-    __threads_post_reply_endpoint__ = ""
-    __threads_profile_endpoint__ = ""
     __threads_access_token_endpoint__ = "https://graph.threads.net/oauth/access_token"
     __threads_access_token_refresh_endpoint__ = "https://graph.threads.net/refresh_access_token"
-
-    __threads_api_version__ = 'v1.0'
 
     __threads_post_length_limit__ = 500
     __threads_media_limit__ = 20
@@ -28,28 +21,6 @@ class ThreadsPipe:
     __threads_rate_limit__ = 250
     __threads_reply_rate_limit__ = 1000
 
-    __threads_access_token__ = ''
-    __threads_user_id__ = ''
-
-    __wait_before_post_publish__ = True
-    __post_publish_wait_time__ = 35
-
-    __wait_before_media_item_publish__ = True
-    __media_item_publish_wait_time__ = 35
-
-    __handle_hashtags__ = True
-    __auto_handle_hashtags__ = False
-
-    __gh_bearer_token__ = None
-    __gh_api_version__ = "2022-11-28"
-    __gh_username__ = None
-    __gh_repo_name__ = None
-    __gh_upload_timeout__ = 60 * 5
-
-    __wait_on_rate_limit__ = False
-    __check_rate_limit_before_post__ = True
-
-    __handled_media__ = []
 
     __file_url_reg__ = re.compile(r"(?P<url>((https?:\/\/)?[^\s\/]+?\.?)?(([a-zA-Z0-9]+\.[\w]{2,})|([\d]{1,}\.[\d]{1,}\.[\d]{1,}\.[\d]{1,}))([\:\d]+)?\/?([a-zA-Z0-9\.\-\_\/]+)?(\?[a-zA-Z0-9\.\&\#\=\-\_\%\?]+)?)$")
 
@@ -184,6 +155,8 @@ class ThreadsPipe:
 
         self.__threads_access_token__ = access_token
         self.__threads_user_id__ = user_id
+
+        self.__handled_media__ = []
 
         self.__threads_api_version__ = threads_api_version
 
