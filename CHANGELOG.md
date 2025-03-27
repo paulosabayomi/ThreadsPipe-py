@@ -1,5 +1,11 @@
 # Changelog
 
+## [Version 0.4.5] - 2025-03-27
+
+### Fix
+
+- Removed redundancies and moved mutable class attributes into the __init__ method
+
 ## [Version 0.4.4] - 2024-11-19
 
 ### Fix
